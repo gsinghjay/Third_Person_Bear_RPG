@@ -2,17 +2,32 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+    [Header("Movement Settings")]
     [SerializeField] private float moveSpeed = 5f;
+    [SerializeField] private float sprintSpeed = 8f;
     [SerializeField] private float rotationSpeed = 10f;
+    [SerializeField] private float jumpForce = 5f;
+    
+    [Header("Combat Settings")]
+    [SerializeField] private float attackDuration = 0.5f;
+    [SerializeField] private float defendTransitionSpeed = 0.3f;
     
     private Animator animator;
     private CharacterController characterController;
+    private CameraController cameraController;
+    private IPlayerInput playerInput;
     private Vector3 moveDirection;
+    private bool isInCombat;
+    private bool isSprinting;
+    private bool isJumping;
+    private float verticalVelocity;
     
     private void Awake()
     {
         animator = GetComponentInChildren<Animator>();
         characterController = GetComponent<CharacterController>();
+        cameraController = Camera.main.GetComponent<CameraController>();
+        playerInput = GetComponent<PlayerInput>();
     }
     
     private void Start()
@@ -82,7 +97,9 @@ public class PlayerController : MonoBehaviour
     private void Update()
     {
         HandleMovement();
-        HandleAnimation();
+        HandleCombat();
+        HandleJump();
+        UpdateAnimations();
     }
     
     private void HandleMovement()
@@ -103,7 +120,17 @@ public class PlayerController : MonoBehaviour
         }
     }
     
-    private void HandleAnimation()
+    private void HandleCombat()
+    {
+        // Implement combat logic here
+    }
+    
+    private void HandleJump()
+    {
+        // Implement jump logic here
+    }
+    
+    private void UpdateAnimations()
     {
         bool isMoving = moveDirection.magnitude >= 0.1f;
         animator.SetBool("IsMoving", isMoving);
