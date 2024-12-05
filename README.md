@@ -1,13 +1,13 @@
 # Bear Hunter RPG - Terrain Generation
 
 ## Project Overview
-This is a Third Person RPG where players hunt different types of bears across various forest regions. The game features a central village hub with paths leading to three distinct forest areas and a victory tower that unlocks at the end of the game.
+This is a Third Person RPG where players hunt different types of bears across various forest regions. The game features a central village hub with paths leading to three distinct combat arenas and a victory tower.
 
 ## Current Implementation
 ### Terrain Generation System
 We've implemented a custom terrain generator that creates:
 - Central village hub (flat area)
-- Three forest clearings for bear encounters
+- Three combat arenas for bear encounters
 - Elevated victory tower area
 - Interconnecting paths between all locations
 
@@ -55,25 +55,8 @@ Base Texture Resolution: 1024
 - **Village Height**: 30 (Elevation of village area)
 
 #### Path Settings
-- **Path Width**: 15 (Width of forest paths)
+- **Path Width**: 15 (Width of connecting paths)
 - **Path Smoothness**: 20 (Blend between path and terrain)
-
-#### Forest Areas
-Each forest has adjustable:
-1. Northwest Forest (0.2, 0.2)
-   - **Radius**: 75 (Size of clearing)
-   - **Height**: 35 (Elevation of area)
-   - **Position**: Vector2 field for precise placement
-
-2. Northeast Forest (0.8, 0.3)
-   - **Radius**: 75
-   - **Height**: 35
-   - **Position**: Vector2 field for precise placement
-
-3. South Forest (0.5, 0.8)
-   - **Radius**: 75
-   - **Height**: 35
-   - **Position**: Vector2 field for precise placement
 
 #### Victory Tower Settings
 - **Include Tower Path**: Toggle for testing
@@ -81,6 +64,36 @@ Each forest has adjustable:
 - **Tower Area Radius**: 50
 - **Tower Height**: 80
 - **Tower Path Width**: 20
+
+## Combat Areas
+### Northwest Arena - Fire Bears
+- Radius: 35 units
+- Population: 2 normal bears, 2 fire bears
+- Flatness: 0.85 (slight terrain variation)
+- Position: (0.25, 0.25)
+
+### Northeast Arena - Ice Bears
+- Radius: 40 units
+- Population: 1 normal bear, 3 ice bears
+- Flatness: 0.9 (more even terrain)
+- Position: (0.75, 0.25)
+
+### South Arena - Boss Area
+- Radius: 50 units (largest arena)
+- Population: 2 normal bears, 2 fire bears, 2 ice bears
+- Flatness: 0.95 (very flat for boss fights)
+- Position: (0.5, 0.75)
+
+## Bear Types
+- **Normal Bears**: Standard enemy type
+- **Fire Bears**: Special enemy with fire-based attacks
+- **Ice Bears**: Special enemy with ice-based attacks
+
+## Spawn System
+- Each arena has predetermined spawn points
+- Spawn points are generated in a circular pattern
+- Points are placed at 60% of arena radius
+- Equal spacing between spawn points
 
 ### Important Notes
 - All positions are normalized (0-1 range)
