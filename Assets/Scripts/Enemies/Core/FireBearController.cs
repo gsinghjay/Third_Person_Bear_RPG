@@ -1,3 +1,5 @@
+using Enemies.Types;
+
 namespace Enemies.Core
 {
     public class FireBearController : ElementalBearController
