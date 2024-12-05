@@ -30,54 +30,78 @@ Layer 10: Enemy
 Layer 11: Interactable
 ```
 
-## Terrain Generator Settings
-### General Settings
-- Base Height: 20
-- Mountain Height: 100
-- Noise Scale: 50
+## Inspector Settings Guide
 
-### Village Settings
-- Village Radius: 100
-- Transition Zone: 50
-- Village Height: 30
-
-### Path Settings
-- Path Width: 15
-- Path Smoothness: 20
-
-### Forest Areas
-1. Northwest Forest (0.2, 0.2)
-   - Radius: 75
-   - Height: 35
-
-2. Northeast Forest (0.8, 0.3)
-   - Radius: 75
-   - Height: 35
-
-3. South Forest (0.5, 0.8)
-   - Radius: 75
-   - Height: 35
-
-### Victory Tower
-- Position: (0.5, 0.1)
-- Radius: 50
-- Height: 80
-- Path Width: 20
-
-## Git Commits
-
-### Initial Setup
-```git
-commit: "Initial project setup with required packages"
-- Added Cinemachin
-- Added Universal Render Pipeline
-- Added Terrain Tools
-- Updated project settings
+### Terrain Object Settings
+```
+Terrain Width: 1000
+Terrain Length: 1000
+Terrain Height: 200
+Heightmap Resolution: 513
+Detail Resolution: 1024
+Control Texture Resolution: 1024
+Base Texture Resolution: 1024
 ```
 
+### Terrain Generator Window (Tools > Terrain Generator)
+#### General Settings
+- **Base Height**: 20 (Base terrain elevation)
+- **Mountain Height**: 100 (Maximum mountain peaks)
+- **Noise Scale**: 50 (Controls terrain roughness)
 
+#### Village Settings
+- **Village Radius**: 100 (Size of central flat area)
+- **Transition Zone**: 50 (Smooth blend to mountains)
+- **Village Height**: 30 (Elevation of village area)
 
+#### Path Settings
+- **Path Width**: 15 (Width of forest paths)
+- **Path Smoothness**: 20 (Blend between path and terrain)
 
+#### Forest Areas
+Each forest has adjustable:
+1. Northwest Forest (0.2, 0.2)
+   - **Radius**: 75 (Size of clearing)
+   - **Height**: 35 (Elevation of area)
+   - **Position**: Vector2 field for precise placement
+
+2. Northeast Forest (0.8, 0.3)
+   - **Radius**: 75
+   - **Height**: 35
+   - **Position**: Vector2 field for precise placement
+
+3. South Forest (0.5, 0.8)
+   - **Radius**: 75
+   - **Height**: 35
+   - **Position**: Vector2 field for precise placement
+
+#### Victory Tower Settings
+- **Include Tower Path**: Toggle for testing
+- **Tower Position**: (0.5, 0.1) Vector2 field
+- **Tower Area Radius**: 50
+- **Tower Height**: 80
+- **Tower Path Width**: 20
+
+### Important Notes
+- All positions are normalized (0-1 range)
+- Heights are in world units
+- Radius values are in terrain units
+- Changes take effect upon clicking "Generate Terrain"
+- Settings can be adjusted in real-time
+- Generator preserves terrain data resolution
+
+## Usage Instructions
+1. Create a new terrain in Unity (3D Object > Terrain)
+2. Open the Terrain Generator (Tools > Terrain Generator)
+3. Assign your terrain to the generator
+4. Configure settings in each section:
+   - Adjust general terrain parameters
+   - Set village area size and height
+   - Position forest areas
+   - Configure victory tower location
+5. Click "Generate Terrain" to create the landscape
+6. Fine-tune settings as needed
+7. Save terrain changes in Unity
 
 ## Next Steps
 1. Add terrain texturing
@@ -86,17 +110,11 @@ commit: "Initial project setup with required packages"
 4. Set up lighting and atmosphere
 5. Configure player character and camera
 
-## Usage Instructions
-1. Create a new terrain in Unity (3D Object > Terrain)
-2. Open the Terrain Generator (Tools > Terrain Generator)
-3. Assign your terrain to the generator
-4. Adjust settings as needed
-5. Click "Generate Terrain" to create the landscape
-
-## Notes
-- The terrain generator creates a procedural landscape with distinct areas for gameplay
-- All settings are adjustable through the editor window
-- The victory tower path can be toggled for testing purposes
+## Troubleshooting
+- If terrain appears too steep: Reduce mountain height or increase noise scale
+- If paths are too narrow: Increase path width values
+- If transitions are harsh: Increase transition zone or path smoothness
+- If forest areas overlap: Adjust positions in normalized space
 ```
 
 
