@@ -1829,8 +1829,8 @@ GameObject:
   m_Component:
   - component: {fileID: 704994963}
   - component: {fileID: 704994966}
-  - component: {fileID: 704994965}
-  - component: {fileID: 704994964}
+  - component: {fileID: 704994968}
+  - component: {fileID: 704994967}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -1855,41 +1855,6 @@ Transform:
   - {fileID: 2014116238}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &704994964
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 704994962}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 11e2ee2e324402d4699fefa40b26beb2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  mouseSensitivity: 1
-  invertMouseY: 1
---- !u!114 &704994965
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 704994962}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 56d8c1290ac232548ba617da54a76bfd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  moveSpeed: 5
-  sprintSpeed: 8
-  rotationSpeed: 10
-  jumpForce: 5
-  attackDuration: 0.5
-  defendTransitionSpeed: 0.3
-  minVerticalAngle: -30
-  maxVerticalAngle: 60
-  cameraTarget: {fileID: 2014116238}
 --- !u!143 &704994966
 CharacterController:
   m_ObjectHideFlags: 0
@@ -1916,6 +1881,41 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0.7, z: 0}
+--- !u!114 &704994967
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 704994962}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 15eaba1ddc8e5e646b6aed195c3664e8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mouseSensitivity: 1
+  invertMouseY: 0
+--- !u!114 &704994968
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 704994962}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e2394e04d23d7464288d621cf372e588, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  moveSpeed: 5
+  sprintSpeed: 8
+  rotationSpeed: 10
+  jumpForce: 5
+  attackDuration: 0.5
+  defendTransitionSpeed: 0.3
+  minVerticalAngle: -30
+  maxVerticalAngle: 60
+  cameraTarget: {fileID: 2014116238}
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -4103,9 +4103,9 @@ SceneRoots:
   m_Roots:
   - {fileID: 963194228}
   - {fileID: 974744881}
-  - {fileID: 705507995}
-  - {fileID: 66671312}
-  - {fileID: 704994963}
   - {fileID: 1980471408}
   - {fileID: 819842179}
   - {fileID: 506267295}
+  - {fileID: 705507995}
+  - {fileID: 66671312}
+  - {fileID: 704994963}
