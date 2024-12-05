@@ -124,126 +124,54 @@ public class TerrainGenerator : EditorWindow
         int height = terrainData.heightmapResolution;
         float[,] heights = new float[width, height];
 
-        Vector2 center = new Vector2(width / 2f, height / 2f);
-        float villageRadiusInHeightmap = (villageRadius / terrainData.size.x) * width;
-        float transitionZoneInHeightmap = (transitionZone / terrainData.size.x) * width;
-        Vector2 towerPositionInHeightmap = new Vector2(
-            towerPosition.x * width,
-            towerPosition.y * height
-        );
-
-        // Convert forest positions to heightmap coordinates
-        Vector2[] forestPositionsInHeightmap = new Vector2[forestAreas.Length];
-        for (int i = 0; i < forestAreas.Length; i++)
-        {
-            forestPositionsInHeightmap[i] = new Vector2(
-                forestAreas[i].position.x * width,
-                forestAreas[i].position.y * height
-            );
-        }
-
+        // Create hunting zones with varying elevation
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                Vector2 currentPoint = new Vector2(x, y);
-                float distanceFromCenter = Vector2.Distance(currentPoint, center);
-
-                // Base terrain generation (mountains)
                 float xCoord = (float)x / width * noiseScale;
                 float yCoord = (float)y / height * noiseScale;
+                
+                // Create base terrain with Perlin noise
                 float perlin = Mathf.PerlinNoise(xCoord, yCoord);
-                float mountainValue = perlin * (mountainHeight / terrainData.heightmapResolution) 
-                                    + (baseHeight / terrainData.heightmapResolution);
-
-                // Village influence
-                float villageValue = villageHeight / terrainData.heightmapResolution;
-                float heightValue = mountainValue;
-
-                // Calculate village area
-                if (distanceFromCenter < villageRadiusInHeightmap)
-                {
-                    heightValue = villageValue;
-                }
-                else if (distanceFromCenter < villageRadiusInHeightmap + transitionZoneInHeightmap)
-                {
-                    float transitionProgress = (distanceFromCenter - villageRadiusInHeightmap) / transitionZoneInHeightmap;
-                    transitionProgress = Mathf.SmoothStep(0, 1, transitionProgress);
-                    heightValue = Mathf.Lerp(villageValue, mountainValue, transitionProgress);
-                }
-
-                // Calculate forest areas
-                for (int i = 0; i < forestAreas.Length; i++)
-                {
-                    float distanceFromForest = Vector2.Distance(currentPoint, forestPositionsInHeightmap[i]);
-                    float forestRadius = (forestAreas[i].radius / terrainData.size.x) * width;
-                    float forestValue = forestAreas[i].height / terrainData.heightmapResolution;
-
-                    if (distanceFromForest < forestRadius)
-                    {
-                        float forestInfluence = 1f - (distanceFromForest / forestRadius);
-                        forestInfluence = Mathf.SmoothStep(0, 1, forestInfluence);
-                        heightValue = Mathf.Lerp(heightValue, forestValue, forestInfluence);
-                    }
-                }
-
-                // Calculate regular paths
-                float regularPathInfluence = 0f;
-                for (int i = 0; i < forestAreas.Length; i++)
-                {
-                    regularPathInfluence = Mathf.Max(regularPathInfluence, 
-                        GetPathInfluence(currentPoint, center, forestPositionsInHeightmap[i]));
-                }
-
-                if (regularPathInfluence > 0)
-                {
-                    float pathHeight = villageValue * 1.1f; // Slightly elevated paths
-                    heightValue = Mathf.Lerp(heightValue, pathHeight, regularPathInfluence);
-                }
-
-                // Calculate tower area and path
-                if (includeTowerPath)
-                {
-                    float distanceFromTower = Vector2.Distance(currentPoint, towerPositionInHeightmap);
-                    float towerRadiusInHeightmap = (towerRadius / terrainData.size.x) * width;
-                    float towerValue = towerHeight / terrainData.heightmapResolution;
-
-                    // Tower platform area
-                    if (distanceFromTower < towerRadiusInHeightmap)
-                    {
-                        float towerInfluence = 1f - (distanceFromTower / towerRadiusInHeightmap);
-                        towerInfluence = Mathf.SmoothStep(0, 1, towerInfluence);
-                        heightValue = Mathf.Lerp(heightValue, towerValue, towerInfluence);
-                    }
-
-                    // Elevated path to tower
-                    var (influence, heightMultiplier) = GetTowerPathInfluence(
-                        currentPoint, 
-                        center, 
-                        towerPositionInHeightmap,
-                        0.5f // Controls how high the path arches
-                    );
-
-                    if (influence > 0)
-                    {
-                        float pathBaseHeight = Mathf.Lerp(
-                            villageHeight,
-                            towerHeight,
-                            heightMultiplier
-                        ) / terrainData.heightmapResolution;
-
-                        heightValue = Mathf.Lerp(
-                            heightValue,
-                            pathBaseHeight,
-                            influence
-                        );
-                    }
-                }
-
-                heights[x, y] = heightValue;
+                
+                // Add some variation for hunting areas
+                float additionalNoise = Mathf.PerlinNoise(xCoord * 2, yCoord * 2) * 0.5f;
+                
+                // Create some clearings for combat
+                float clearing = CreateClearings(x, y, width, height);
+                
+                heights[x, y] = (perlin * 0.7f + additionalNoise * 0.3f) * clearing * 
+                               (mountainHeight / terrainData.heightmapResolution) + 
+                               (baseHeight / terrainData.heightmapResolution);
             }
         }
 
         terrainData.SetHeights(0, 0, heights);
+    }
+
+    private float CreateClearings(int x, int y, int width, int height)
+    {
+        // Create 3 clearing areas for combat
+        Vector2[] clearings = new Vector2[] {
+            new Vector2(width * 0.25f, height * 0.25f),  // Northwest clearing
+            new Vector2(width * 0.75f, height * 0.25f),  // Northeast clearing
+            new Vector2(width * 0.5f, height * 0.75f)    // South clearing
+        };
+
+        float clearingInfluence = 1f;
+        float clearingRadius = width * 0.1f; // 10% of terrain width
+
+        foreach (Vector2 clearing in clearings)
+        {
+            float distance = Vector2.Distance(new Vector2(x, y), clearing);
+            if (distance < clearingRadius)
+            {
+                float influence = distance / clearingRadius;
+                clearingInfluence = Mathf.Min(clearingInfluence, influence);
+            }
+        }
+
+        return Mathf.Lerp(0.7f, 1f, clearingInfluence); // Flatten clearings to 70%
     }
 }
