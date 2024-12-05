@@ -76,4 +76,26 @@ public class CameraController : MonoBehaviour
         sprintCamera.Priority = isSprinting ? 30 : 0;
         normalCamera.Priority = isSprinting ? 0 : 10;
     }
+    
+    private void LateUpdate()
+    {
+        // Update camera position based on priorities
+        if (sprintCamera.Priority > 0)
+        {
+            UpdateCameraSettings(sprintCamera, sprintFOV);
+        }
+        else if (combatCamera.Priority > 0)
+        {
+            UpdateCameraSettings(combatCamera, combatFOV);
+        }
+        else
+        {
+            UpdateCameraSettings(normalCamera, normalFOV);
+        }
+    }
+    
+    private void UpdateCameraSettings(CinemachineVirtualCamera camera, float fov)
+    {
+        camera.m_Lens.FieldOfView = fov;
+    }
 } 

@@ -12,6 +12,10 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float attackDuration = 0.5f;
     [SerializeField] private float defendTransitionSpeed = 0.3f;
     
+    [Header("Camera Settings")]
+    [SerializeField] private float minVerticalAngle = -30f;
+    [SerializeField] private float maxVerticalAngle = 60f;
+    
     private Animator animator;
     private CharacterController characterController;
     private CameraController cameraController;
@@ -21,6 +25,9 @@ public class PlayerController : MonoBehaviour
     private bool isSprinting;
     private bool isJumping;
     private float verticalVelocity;
+    private float currentRotationX = 0f;
+    private float currentRotationY = 0f;
+    private Transform cameraTransform;
     
     private void Awake()
     {
@@ -28,6 +35,11 @@ public class PlayerController : MonoBehaviour
         characterController = GetComponent<CharacterController>();
         cameraController = Camera.main.GetComponent<CameraController>();
         playerInput = GetComponent<PlayerInput>();
+        cameraTransform = Camera.main.transform;
+        
+        // Lock and hide cursor
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
     
     private void Start()
@@ -96,10 +108,28 @@ public class PlayerController : MonoBehaviour
     
     private void Update()
     {
+        HandleCameraRotation();
         HandleMovement();
         HandleCombat();
         HandleJump();
         UpdateAnimations();
+    }
+    
+    private void HandleCameraRotation()
+    {
+        // Get mouse input
+        Vector2 cameraInput = playerInput.CameraInput;
+        
+        // Update rotation values
+        currentRotationY += cameraInput.x;
+        currentRotationX -= cameraInput.y; // Inverted for natural camera feel
+        currentRotationX = Mathf.Clamp(currentRotationX, minVerticalAngle, maxVerticalAngle);
+        
+        // Apply rotation to player (horizontal only)
+        transform.rotation = Quaternion.Euler(0f, currentRotationY, 0f);
+        
+        // Apply full rotation to camera
+        cameraTransform.rotation = Quaternion.Euler(currentRotationX, currentRotationY, 0f);
     }
     
     private void HandleMovement()
