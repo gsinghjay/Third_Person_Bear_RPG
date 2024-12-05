@@ -1,5 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
+using Enemies.Interfaces;
+using Enemies.Types;
 
 namespace Enemies.Core
 {
