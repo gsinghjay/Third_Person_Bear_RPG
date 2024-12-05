@@ -12,20 +12,21 @@ This is a Third Person RPG where players hunt different types of bears across va
   - FOV: 60°
   - Follow Distance: 5 units
   - Follow Height: 1.5 units
-  - Damping: 1.0 on all axes
+  - Damping: 0 for WebGL optimization
+  - Priority: 10 (default)
 
 - **Combat Camera**
   - FOV: 55°
   - Follow Distance: 4 units
   - Follow Height: 2 units
-  - Damping: 1.5 on all axes
+  - Damping: 0 for WebGL optimization
   - Priority: 20 (when active)
 
 - **Sprint Camera**
   - FOV: 70°
   - Follow Distance: 6 units
   - Follow Height: 1.7 units
-  - Damping: 0.8 on all axes
+  - Damping: 0 for WebGL optimization
   - Priority: 30 (when active)
 
 ### Camera Controller Settings
@@ -36,17 +37,26 @@ This is a Third Person RPG where players hunt different types of bears across va
     "combatFOV": 55,
     "followDistance": 5,
     "followHeight": 1.5,
-    "followDamping": 2
+    "mouseSensitivity": {
+    "horizontal": 175,
+    "vertical": 1.5
+    }
 }
 ```
 
+### WebGL Optimizations
+- Zero acceleration/deceleration times for responsive control
+- Direct input axis mapping through Cinemachine
+- Optimized axis speeds (X: 175, Y: 1.5)
+- Simplified camera state transitions
+- Efficient priority-based camera switching
+
 ### Input System Updates
-- Mouse X/Y axis for camera control
-- Left Shift for sprinting
-- Left Mouse Button for attacking
-- Right Mouse Button for defending
-- Mouse sensitivity configuration
-- Optional Y-axis inversion
+- Mouse X/Y axis directly mapped to Cinemachine
+- Removed manual delta calculations
+- Optimized for WebGL performance
+- Maintained Y-axis inversion option
+- Smooth camera transitions between states
 
 ### Required Components
 - Main Camera with CameraController script
@@ -113,16 +123,57 @@ We've implemented a custom terrain generator that creates:
     "com.unity.terrain-tools": "5.0.5"
 }
 ```
+## Scene Hierarchy Guide
 
-### Layer Setup
-```
-Layer 6: Ground
-Layer 7: Terrain
-Layer 8: Environment
-Layer 9: Player
-Layer 10: Enemy
-Layer 11: Interactable
-```
+### Main Camera Components
+- **Main Camera**
+  - Primary camera with Cinemachine Brain component
+  - Handles camera blending and transitions
+  - Update Method: FixedUpdate for consistent frame timing
+
+### Virtual Cameras
+- **CM vcam Normal** (Priority: 10)
+  - Default third-person camera view
+  - Used for general exploration and movement
+  - FOV: 60°, Follow Distance: 5 units
+  - Optimized damping for smooth movement
+
+- **CM vcam Combat** (Priority: 20)
+  - Activated during combat encounters
+  - Closer follow distance for better action visibility
+  - FOV: 55°, Follow Distance: 4 units
+  - Increased damping for stable combat view
+
+- **CM vcam Sprint** (Priority: 30)
+  - Activates during player sprinting
+  - Wider FOV and increased follow distance
+  - FOV: 70°, Follow Distance: 6 units
+  - Optimized for fast movement
+
+### Player Setup
+- **Player**
+  - Root object with CharacterController component
+  - Contains PlayerInput and PlayerController scripts
+  - **MaleCharacterPBR**
+    - Character model and animations
+  - **CameraTarget**
+    - Empty transform for camera follow/look target
+    - Offset slightly above player model
+    - Used by all virtual cameras
+
+### Required Components
+- Each virtual camera requires:
+  - CinemachineFreeLook component
+  - Properly configured Input settings
+  - Assigned Follow/Look target
+  - WebGL-optimized damping values
+
+### Camera Priority System
+- Higher priority cameras override lower ones
+- Normal Camera: 10 (default)
+- Combat Camera: 20 (when in combat)
+- Sprint Camera: 30 (when sprinting)
+- Smooth blending between states
 
 ## Inspector Settings Guide
 
