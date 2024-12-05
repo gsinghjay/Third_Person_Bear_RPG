@@ -120,33 +120,34 @@ public class PlayerController : MonoBehaviour
         // Get mouse input
         Vector2 cameraInput = playerInput.CameraInput;
         
-        // Update rotation values
+        // Update rotation values based on mouse input (only Y for player)
         currentRotationY += cameraInput.x;
-        currentRotationX -= cameraInput.y; // Inverted for natural camera feel
-        currentRotationX = Mathf.Clamp(currentRotationX, minVerticalAngle, maxVerticalAngle);
         
-        // Apply rotation to player (horizontal only)
+        // Only rotate the player, let Cinemachine handle the camera
         transform.rotation = Quaternion.Euler(0f, currentRotationY, 0f);
-        
-        // Apply full rotation to camera
-        cameraTransform.rotation = Quaternion.Euler(currentRotationX, currentRotationY, 0f);
     }
     
     private void HandleMovement()
     {
-        float horizontal = Input.GetAxisRaw("Horizontal");
-        float vertical = Input.GetAxisRaw("Vertical");
+        // Get input from PlayerInput
+        Vector2 input = playerInput.MovementInput;
         
-        Vector3 movement = new Vector3(horizontal, 0f, vertical).normalized;
-        
-        if (movement.magnitude >= 0.1f)
+        if (input.magnitude >= 0.1f)
         {
-            float targetAngle = Mathf.Atan2(movement.x, movement.z) * Mathf.Rad2Deg;
-            float angle = Mathf.LerpAngle(transform.eulerAngles.y, targetAngle, rotationSpeed * Time.deltaTime);
-            transform.rotation = Quaternion.Euler(0f, angle, 0f);
+            // Always use transform.forward/right for consistent movement relative to player
+            Vector3 forward = transform.forward;
+            Vector3 right = transform.right;
             
-            moveDirection = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
-            characterController.Move(moveDirection * moveSpeed * Time.deltaTime);
+            // Calculate movement direction
+            moveDirection = (forward * input.y + right * input.x).normalized;
+            
+            // Move in the calculated direction
+            float currentSpeed = playerInput.IsSprinting ? sprintSpeed : moveSpeed;
+            characterController.Move(moveDirection * currentSpeed * Time.deltaTime);
+        }
+        else
+        {
+            moveDirection = Vector3.zero;
         }
     }
     

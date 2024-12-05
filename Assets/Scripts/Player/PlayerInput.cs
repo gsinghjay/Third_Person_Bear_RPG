@@ -13,7 +13,7 @@ public class PlayerInput : MonoBehaviour, IPlayerInput
     
     public Vector2 CameraInput => new Vector2(
         Input.GetAxis("Mouse X") * mouseSensitivity,
-        Input.GetAxis("Mouse Y") * mouseSensitivity * (invertMouseY ? 1 : -1)
+        Input.GetAxis("Mouse Y") * mouseSensitivity * (invertMouseY ? -1 : 1)
     );
     
     public bool IsJumping => Input.GetButtonDown("Jump");

@@ -34,35 +34,73 @@ public class CameraController : MonoBehaviour
     
     private void SetupCameraComponents()
     {
+        if (normalCamera == null || combatCamera == null || sprintCamera == null)
+        {
+            Debug.LogError("One or more virtual cameras are not assigned in CameraController!");
+            return;
+        }
+
         normalFraming = normalCamera.GetCinemachineComponent<CinemachineFramingTransposer>();
         combatFraming = combatCamera.GetCinemachineComponent<CinemachineFramingTransposer>();
         sprintFraming = sprintCamera.GetCinemachineComponent<CinemachineFramingTransposer>();
+
+        if (normalFraming == null || combatFraming == null || sprintFraming == null)
+        {
+            Debug.LogError("One or more cameras are missing CinemachineFramingTransposer component!");
+            return;
+        }
     }
     
     private void InitializeCameraSettings()
     {
+        if (normalFraming == null || combatFraming == null || sprintFraming == null)
+        {
+            return;
+        }
+
         // Normal camera setup
         normalCamera.m_Lens.FieldOfView = normalFOV;
         normalFraming.m_CameraDistance = followDistance;
         normalFraming.m_TrackedObjectOffset.y = followHeight;
-        normalFraming.m_XDamping = followDamping;
-        normalFraming.m_YDamping = followDamping;
-        normalFraming.m_ZDamping = followDamping;
+        normalFraming.m_XDamping = 0.05f;
+        normalFraming.m_YDamping = 0.05f;
+        normalFraming.m_ZDamping = 0.1f;
+        
+        // Disable Aim component if it exists
+        var aimComponent = normalCamera.GetCinemachineComponent<CinemachineComposer>();
+        if (aimComponent != null)
+        {
+            aimComponent.enabled = false;
+        }
         
         // Combat camera setup
         combatCamera.m_Lens.FieldOfView = combatFOV;
         combatFraming.m_CameraDistance = combatCameraDistance;
         combatFraming.m_TrackedObjectOffset.y = combatCameraHeight;
+        combatFraming.m_XDamping = 0.1f;
+        combatFraming.m_YDamping = 0.1f;
+        combatFraming.m_ZDamping = 0.5f;
         
         // Sprint camera setup
         sprintCamera.m_Lens.FieldOfView = sprintFOV;
         sprintFraming.m_CameraDistance = followDistance * 1.2f;
         sprintFraming.m_TrackedObjectOffset.y = followHeight * 1.1f;
+        sprintFraming.m_XDamping = 0.1f;
+        sprintFraming.m_YDamping = 0.1f;
+        sprintFraming.m_ZDamping = 0.5f;
         
         // Set initial priorities
         normalCamera.Priority = 10;
         combatCamera.Priority = 0;
         sprintCamera.Priority = 0;
+        
+        // Set the update method
+        var brain = Camera.main.GetComponent<CinemachineBrain>();
+        if (brain != null)
+        {
+            brain.m_UpdateMethod = CinemachineBrain.UpdateMethod.FixedUpdate;
+            brain.m_BlendUpdateMethod = CinemachineBrain.BrainUpdateMethod.FixedUpdate;
+        }
     }
     
     public void SetCombatMode(bool isInCombat)
