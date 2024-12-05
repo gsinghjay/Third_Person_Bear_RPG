@@ -18,15 +18,15 @@ namespace Enemies.Core
         public Animator Animator { get; private set; }
         public CharacterController CharacterController { get; private set; }
         public float VerticalVelocity { get; set; }
+        public Transform PlayerTransform { get; private set; }
 
-        protected Transform player;
         protected IBearState currentState;
 
         protected virtual void Awake()
         {
             Animator = GetComponent<Animator>();
             CharacterController = GetComponent<CharacterController>();
-            player = GameObject.FindGameObjectWithTag("Player").transform;
+            PlayerTransform = GameObject.FindGameObjectWithTag("Player").transform;
             Health = maxHealth;
         }
 
@@ -54,6 +54,7 @@ namespace Enemies.Core
         protected virtual void Die()
         {
             // Handle death animation and cleanup
+            Animator.SetTrigger("Die");
             Destroy(gameObject, 2f);
         }
 
@@ -67,6 +68,12 @@ namespace Enemies.Core
         protected virtual void Update()
         {
             currentState?.Update();
+        }
+
+        public void DealDamage()
+        {
+            // Implement logic to deal damage to the player
+            Debug.Log("Bear deals damage to the player!");
         }
     }
 } 
