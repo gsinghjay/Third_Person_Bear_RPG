@@ -5,6 +5,54 @@ This is a Third Person RPG where players hunt different types of bears across va
 
 ## Current Implementation
 
+## Camera System
+
+### Virtual Camera Setup
+- **Normal Camera (Default View)**
+  - FOV: 60°
+  - Follow Distance: 5 units
+  - Follow Height: 1.5 units
+  - Damping: 1.0 on all axes
+
+- **Combat Camera**
+  - FOV: 55°
+  - Follow Distance: 4 units
+  - Follow Height: 2 units
+  - Damping: 1.5 on all axes
+  - Priority: 20 (when active)
+
+- **Sprint Camera**
+  - FOV: 70°
+  - Follow Distance: 6 units
+  - Follow Height: 1.7 units
+  - Damping: 0.8 on all axes
+  - Priority: 30 (when active)
+
+### Camera Controller Settings
+```json
+{
+    "normalFOV": 60,
+    "sprintFOV": 70,
+    "combatFOV": 55,
+    "followDistance": 5,
+    "followHeight": 1.5,
+    "followDamping": 2
+}
+```
+
+### Input System Updates
+- Mouse X/Y axis for camera control
+- Left Shift for sprinting
+- Left Mouse Button for attacking
+- Right Mouse Button for defending
+- Mouse sensitivity configuration
+- Optional Y-axis inversion
+
+### Required Components
+- Main Camera with CameraController script
+- Three Cinemachine Virtual Cameras
+- Cinemachine Brain on Main Camera
+
 ### Player Character System
 - Using MaleCharacterPBR from RPG Tiny Hero Duo asset
 - Character Controller with terrain-aware positioning
