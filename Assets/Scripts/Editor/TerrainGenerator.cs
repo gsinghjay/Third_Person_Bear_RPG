@@ -12,16 +12,7 @@ public class TerrainGenerator : EditorWindow
     private float transitionZone = 50f;
     private float villageHeight = 30f;
 
-    // Forest and path parameters
-    [System.Serializable]
-    private class ForestArea
-    {
-        public Vector2 position; // Normalized position (0-1)
-        public float radius = 75f;
-        public float height = 35f;
-    }
-
-    private ForestArea[] forestAreas = new ForestArea[3];
+    // Path parameters
     private float pathWidth = 15f;
     private float pathSmoothness = 20f;
 
@@ -40,8 +31,8 @@ public class TerrainGenerator : EditorWindow
         public float flatness = 0.9f;
         public Vector2 position;
         public int normalBearCount = 2;
-        public int specialBearCount = 2;
-        public BearType specialBearType;
+        public int fireBearCount = 0;
+        public int iceBearCount = 0;
     }
 
     private enum BearType
@@ -62,12 +53,7 @@ public class TerrainGenerator : EditorWindow
 
     private void OnEnable()
     {
-        // Initialize forest areas in different directions
-        forestAreas[0] = new ForestArea { position = new Vector2(0.2f, 0.2f) }; // Northwest forest
-        forestAreas[1] = new ForestArea { position = new Vector2(0.8f, 0.3f) }; // Northeast forest
-        forestAreas[2] = new ForestArea { position = new Vector2(0.5f, 0.8f) }; // South forest
-
-        // Simplified arena settings
+        // Update arena settings
         arenas[0] = new ArenaSettings
         {
             name = "Northwest Arena - Fire",
@@ -75,8 +61,8 @@ public class TerrainGenerator : EditorWindow
             radius = 35f,
             flatness = 0.85f,
             normalBearCount = 2,
-            specialBearCount = 2,
-            specialBearType = BearType.Fire
+            fireBearCount = 2,
+            iceBearCount = 0
         };
 
         arenas[1] = new ArenaSettings
@@ -86,8 +72,8 @@ public class TerrainGenerator : EditorWindow
             radius = 40f,
             flatness = 0.9f,
             normalBearCount = 1,
-            specialBearCount = 3,
-            specialBearType = BearType.Ice
+            fireBearCount = 0,
+            iceBearCount = 3
         };
 
         arenas[2] = new ArenaSettings
@@ -97,8 +83,8 @@ public class TerrainGenerator : EditorWindow
             radius = 50f,
             flatness = 0.95f,
             normalBearCount = 2,
-            specialBearCount = 4,
-            specialBearType = BearType.Normal
+            fireBearCount = 2,
+            iceBearCount = 2
         };
     }
 
@@ -123,16 +109,6 @@ public class TerrainGenerator : EditorWindow
         pathSmoothness = EditorGUILayout.FloatField("Path Smoothness", pathSmoothness);
 
         EditorGUILayout.Space(10);
-        EditorGUILayout.LabelField("Forest Areas", EditorStyles.boldLabel);
-        for (int i = 0; i < forestAreas.Length; i++)
-        {
-            EditorGUILayout.LabelField($"Forest {i + 1}", EditorStyles.boldLabel);
-            forestAreas[i].position = EditorGUILayout.Vector2Field("Position", forestAreas[i].position);
-            forestAreas[i].radius = EditorGUILayout.FloatField("Radius", forestAreas[i].radius);
-            forestAreas[i].height = EditorGUILayout.FloatField("Height", forestAreas[i].height);
-        }
-
-        EditorGUILayout.Space(10);
         EditorGUILayout.LabelField("Victory Tower Settings", EditorStyles.boldLabel);
         includeTowerPath = EditorGUILayout.Toggle("Include Tower Path", includeTowerPath);
         towerPosition = EditorGUILayout.Vector2Field("Tower Position", towerPosition);
@@ -146,10 +122,12 @@ public class TerrainGenerator : EditorWindow
         foreach (var arena in arenas)
         {
             EditorGUILayout.LabelField(arena.name, EditorStyles.boldLabel);
+            arena.position = EditorGUILayout.Vector2Field("Position", arena.position);
             arena.radius = EditorGUILayout.FloatField("Arena Radius", arena.radius);
             arena.flatness = EditorGUILayout.Slider("Flatness", arena.flatness, 0f, 1f);
             arena.normalBearCount = EditorGUILayout.IntField("Normal Bears", arena.normalBearCount);
-            arena.specialBearCount = EditorGUILayout.IntField("Special Bears", arena.specialBearCount);
+            arena.fireBearCount = EditorGUILayout.IntField("Fire Bears", arena.fireBearCount);
+            arena.iceBearCount = EditorGUILayout.IntField("Ice Bears", arena.iceBearCount);
             EditorGUILayout.Space(5);
         }
 
@@ -322,11 +300,12 @@ public class TerrainGenerator : EditorWindow
     {
         List<Vector2> points = new List<Vector2>();
         float radius = arena.radius;
+        int totalBears = arena.normalBearCount + arena.fireBearCount + arena.iceBearCount;
         
         // Generate spawn points in a circle pattern
-        for (int i = 0; i < arena.normalBearCount + arena.specialBearCount; i++)
+        for (int i = 0; i < totalBears; i++)
         {
-            float angle = (360f / (arena.normalBearCount + arena.specialBearCount)) * i;
+            float angle = (360f / totalBears) * i;
             float spawnRadius = radius * 0.6f; // Spawn at 60% of arena radius
             
             float x = arena.position.x + (Mathf.Cos(angle * Mathf.Deg2Rad) * spawnRadius);
