@@ -1,6 +1,7 @@
 using UnityEngine;
 using Enemies.States;
 using Enemies.Interfaces;
+using Enemies.Types;
 
 namespace Enemies.Core
 {
@@ -11,6 +12,10 @@ namespace Enemies.Core
         [SerializeField] protected float moveSpeed = 5f;
         [SerializeField] protected float attackRange = 2f;
         [SerializeField] protected float detectionRange = 10f;
+        
+        public float MoveSpeed => moveSpeed;
+        public float AttackRange => attackRange;
+        public float DetectionRange => detectionRange;
         
         public float Health { get; protected set; }
         public abstract BearType Type { get; }
@@ -48,17 +53,16 @@ namespace Enemies.Core
 
         protected virtual float CalculateDamage(float damage, DamageType damageType)
         {
-            return damage; // Override in derived classes for elemental resistances
+            return damage;
         }
 
         protected virtual void Die()
         {
-            // Handle death animation and cleanup
             Animator.SetTrigger("Die");
             Destroy(gameObject, 2f);
         }
 
-        protected void ChangeState(IBearState newState)
+        public void ChangeState(IBearState newState)
         {
             currentState?.Exit();
             currentState = newState;
@@ -72,8 +76,7 @@ namespace Enemies.Core
 
         public void DealDamage()
         {
-            // Implement logic to deal damage to the player
-            Debug.Log("Bear deals damage to the player!");
+            Debug.Log($"{Type} Bear deals damage to the player!");
         }
     }
 } 
