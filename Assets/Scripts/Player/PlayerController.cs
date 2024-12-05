@@ -2,17 +2,55 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+    [Header("Movement Settings")]
     [SerializeField] private float moveSpeed = 5f;
+    [SerializeField] private float sprintSpeed = 8f;
     [SerializeField] private float rotationSpeed = 10f;
+    [SerializeField] private float jumpForce = 5f;
+    
+    [Header("Combat Settings")]
+    [SerializeField] private float attackDuration = 0.5f;
+    [SerializeField] private float defendTransitionSpeed = 0.3f;
+    
+    [Header("Camera Settings")]
+    [SerializeField] private float minVerticalAngle = -30f;
+    [SerializeField] private float maxVerticalAngle = 60f;
+    [SerializeField] private Transform cameraTarget;
     
     private Animator animator;
     private CharacterController characterController;
+    private CameraController cameraController;
+    private IPlayerInput playerInput;
     private Vector3 moveDirection;
+    private bool isInCombat;
+    private bool isSprinting;
+    private bool isJumping;
+    private float verticalVelocity;
+    private float currentRotationX = 0f;
+    private float currentRotationY = 0f;
+    private Transform cameraTransform;
     
     private void Awake()
     {
         animator = GetComponentInChildren<Animator>();
         characterController = GetComponent<CharacterController>();
+        cameraController = Camera.main.GetComponent<CameraController>();
+        playerInput = GetComponent<PlayerInput>();
+        cameraTransform = Camera.main.transform;
+        
+        // Lock and hide cursor
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+        
+        // Setup camera target
+        if (cameraTarget == null)
+        {
+            GameObject targetObj = new GameObject("CameraTarget");
+            cameraTarget = targetObj.transform;
+            cameraTarget.parent = transform;
+            cameraTarget.localPosition = new Vector3(0f, 1.5f, 0f); // Adjust height as needed
+            cameraTarget.localRotation = Quaternion.identity;
+        }
     }
     
     private void Start()
@@ -82,28 +120,88 @@ public class PlayerController : MonoBehaviour
     private void Update()
     {
         HandleMovement();
-        HandleAnimation();
+        HandleCombat();
+        HandleJump();
+        UpdateAnimations();
     }
     
     private void HandleMovement()
     {
-        float horizontal = Input.GetAxisRaw("Horizontal");
-        float vertical = Input.GetAxisRaw("Vertical");
+        Vector2 input = playerInput.MovementInput;
         
-        Vector3 movement = new Vector3(horizontal, 0f, vertical).normalized;
-        
-        if (movement.magnitude >= 0.1f)
+        if (input.magnitude >= 0.1f)
         {
-            float targetAngle = Mathf.Atan2(movement.x, movement.z) * Mathf.Rad2Deg;
-            float angle = Mathf.LerpAngle(transform.eulerAngles.y, targetAngle, rotationSpeed * Time.deltaTime);
-            transform.rotation = Quaternion.Euler(0f, angle, 0f);
+            // Cache camera transform for better performance
+            Transform mainCameraTransform = Camera.main.transform;
             
-            moveDirection = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
-            characterController.Move(moveDirection * moveSpeed * Time.deltaTime);
+            // Get the camera's forward and right vectors
+            Vector3 cameraForward = mainCameraTransform.forward;
+            Vector3 cameraRight = mainCameraTransform.right;
+            
+            // Project vectors onto the horizontal plane (y = 0)
+            cameraForward.y = 0;
+            cameraRight.y = 0;
+            cameraForward.Normalize();
+            cameraRight.Normalize();
+            
+            // Calculate move direction relative to camera orientation
+            moveDirection = (cameraForward * input.y + cameraRight * input.x).normalized;
+            
+            // Optimize rotation calculation
+            if (moveDirection != Vector3.zero)
+            {
+                transform.rotation = Quaternion.RotateTowards(
+                    transform.rotation,
+                    Quaternion.LookRotation(moveDirection),
+                    rotationSpeed * Time.deltaTime * 100f
+                );
+            }
+            
+            // Move in the calculated direction
+            float currentSpeed = playerInput.IsSprinting ? sprintSpeed : moveSpeed;
+            Vector3 movement = moveDirection * (currentSpeed * Time.deltaTime);
+            characterController.Move(movement + new Vector3(0, verticalVelocity * Time.deltaTime, 0));
+        }
+        else
+        {
+            moveDirection = Vector3.zero;
+            characterController.Move(new Vector3(0, verticalVelocity * Time.deltaTime, 0));
         }
     }
     
-    private void HandleAnimation()
+    private void HandleCombat()
+    {
+        // Implement combat logic here
+    }
+    
+    private void HandleJump()
+    {
+        if (characterController.isGrounded)
+        {
+            verticalVelocity = -0.5f; // Small downward force when grounded
+            
+            if (playerInput.IsJumping)
+            {
+                verticalVelocity = jumpForce;
+                animator.SetTrigger("Jump");
+            }
+        }
+        else
+        {
+            // Apply gravity
+            verticalVelocity += Physics.gravity.y * Time.deltaTime;
+        }
+        
+        // Apply vertical movement
+        Vector3 verticalMovement = new Vector3(0f, verticalVelocity * Time.deltaTime, 0f);
+        characterController.Move(verticalMovement);
+        
+        // Update animation parameters
+        animator.SetFloat("VerticalVelocity", verticalVelocity);
+        animator.SetBool("IsGrounded", characterController.isGrounded);
+    }
+    
+    private void UpdateAnimations()
     {
         bool isMoving = moveDirection.magnitude >= 0.1f;
         animator.SetBool("IsMoving", isMoving);
