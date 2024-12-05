@@ -1,12 +1,13 @@
 using UnityEngine;
 using Cinemachine;
+using System.Collections;
 
 public class CameraController : MonoBehaviour
 {
     [Header("Camera References")]
-    [SerializeField] private CinemachineVirtualCamera normalCamera;
-    [SerializeField] private CinemachineVirtualCamera combatCamera;
-    [SerializeField] private CinemachineVirtualCamera sprintCamera;
+    [SerializeField] private CinemachineFreeLook normalCamera;
+    [SerializeField] private CinemachineFreeLook combatCamera;
+    [SerializeField] private CinemachineFreeLook sprintCamera;
     
     [Header("Camera Settings")]
     [SerializeField] private float normalFOV = 60f;
@@ -21,10 +22,10 @@ public class CameraController : MonoBehaviour
     [SerializeField] private float followDistance = 5f;
     [SerializeField] private float followHeight = 2f;
     [SerializeField] private float followDamping = 2f;
+    [SerializeField] private Transform cameraTarget;
     
-    private CinemachineFramingTransposer normalFraming;
-    private CinemachineFramingTransposer combatFraming;
-    private CinemachineFramingTransposer sprintFraming;
+    [Header("Input Settings")]
+    [SerializeField] private float mouseSensitivity = 2f;
     
     private void Awake()
     {
@@ -40,67 +41,53 @@ public class CameraController : MonoBehaviour
             return;
         }
 
-        normalFraming = normalCamera.GetCinemachineComponent<CinemachineFramingTransposer>();
-        combatFraming = combatCamera.GetCinemachineComponent<CinemachineFramingTransposer>();
-        sprintFraming = sprintCamera.GetCinemachineComponent<CinemachineFramingTransposer>();
-
-        if (normalFraming == null || combatFraming == null || sprintFraming == null)
+        if (cameraTarget == null)
         {
-            Debug.LogError("One or more cameras are missing CinemachineFramingTransposer component!");
+            Debug.LogError("Camera target is not assigned!");
             return;
         }
+
+        // Set the camera targets
+        normalCamera.Follow = normalCamera.LookAt = cameraTarget;
+        combatCamera.Follow = combatCamera.LookAt = cameraTarget;
+        sprintCamera.Follow = sprintCamera.LookAt = cameraTarget;
     }
     
     private void InitializeCameraSettings()
     {
-        if (normalFraming == null || combatFraming == null || sprintFraming == null)
-        {
-            return;
-        }
-
         // Normal camera setup
         normalCamera.m_Lens.FieldOfView = normalFOV;
-        normalFraming.m_CameraDistance = followDistance;
-        normalFraming.m_TrackedObjectOffset.y = followHeight;
-        normalFraming.m_XDamping = 0.05f;
-        normalFraming.m_YDamping = 0.05f;
-        normalFraming.m_ZDamping = 0.1f;
-        
-        // Disable Aim component if it exists
-        var aimComponent = normalCamera.GetCinemachineComponent<CinemachineComposer>();
-        if (aimComponent != null)
-        {
-            aimComponent.enabled = false;
-        }
+        SetupFreeLookRig(normalCamera, followDistance, followHeight);
         
         // Combat camera setup
         combatCamera.m_Lens.FieldOfView = combatFOV;
-        combatFraming.m_CameraDistance = combatCameraDistance;
-        combatFraming.m_TrackedObjectOffset.y = combatCameraHeight;
-        combatFraming.m_XDamping = 0.1f;
-        combatFraming.m_YDamping = 0.1f;
-        combatFraming.m_ZDamping = 0.5f;
+        SetupFreeLookRig(combatCamera, combatCameraDistance, combatCameraHeight);
         
         // Sprint camera setup
         sprintCamera.m_Lens.FieldOfView = sprintFOV;
-        sprintFraming.m_CameraDistance = followDistance * 1.2f;
-        sprintFraming.m_TrackedObjectOffset.y = followHeight * 1.1f;
-        sprintFraming.m_XDamping = 0.1f;
-        sprintFraming.m_YDamping = 0.1f;
-        sprintFraming.m_ZDamping = 0.5f;
+        SetupFreeLookRig(sprintCamera, followDistance * 1.2f, followHeight * 1.1f);
         
         // Set initial priorities
         normalCamera.Priority = 10;
         combatCamera.Priority = 0;
         sprintCamera.Priority = 0;
         
-        // Set the update method
-        var brain = Camera.main.GetComponent<CinemachineBrain>();
-        if (brain != null)
-        {
-            brain.m_UpdateMethod = CinemachineBrain.UpdateMethod.FixedUpdate;
-            brain.m_BlendUpdateMethod = CinemachineBrain.BrainUpdateMethod.FixedUpdate;
-        }
+        // Configure input settings for all cameras
+        ConfigureCameraInput(normalCamera);
+        ConfigureCameraInput(combatCamera);
+        ConfigureCameraInput(sprintCamera);
+    }
+
+    private void SetupFreeLookRig(CinemachineFreeLook camera, float distance, float height)
+    {
+        // Setup the three rigs (top, middle, bottom)
+        camera.m_Orbits[0] = new CinemachineFreeLook.Orbit(height * 1.5f, distance * 0.8f); // Top rig
+        camera.m_Orbits[1] = new CinemachineFreeLook.Orbit(height, distance);               // Middle rig
+        camera.m_Orbits[2] = new CinemachineFreeLook.Orbit(height * 0.5f, distance * 0.8f); // Bottom rig
+        
+        // Set common properties
+        camera.m_XAxis.Value = 0f;
+        camera.m_YAxis.Value = 0.5f; // Center the camera vertically
     }
     
     public void SetCombatMode(bool isInCombat)
@@ -117,6 +104,21 @@ public class CameraController : MonoBehaviour
     
     private void LateUpdate()
     {
+        // Manual input handling for WebGL
+        var input = GetComponent<PlayerInput>();
+        if (input != null)
+        {
+            Vector2 cameraInput = input.CameraInput;
+            normalCamera.m_XAxis.m_InputAxisValue = cameraInput.x;
+            normalCamera.m_YAxis.m_InputAxisValue = cameraInput.y;
+            
+            combatCamera.m_XAxis.m_InputAxisValue = cameraInput.x;
+            combatCamera.m_YAxis.m_InputAxisValue = cameraInput.y;
+            
+            sprintCamera.m_XAxis.m_InputAxisValue = cameraInput.x;
+            sprintCamera.m_YAxis.m_InputAxisValue = cameraInput.y;
+        }
+        
         // Update camera position based on priorities
         if (sprintCamera.Priority > 0)
         {
@@ -132,8 +134,29 @@ public class CameraController : MonoBehaviour
         }
     }
     
-    private void UpdateCameraSettings(CinemachineVirtualCamera camera, float fov)
+    private void UpdateCameraSettings(CinemachineFreeLook camera, float fov)
     {
         camera.m_Lens.FieldOfView = fov;
+    }
+
+    private void ConfigureCameraInput(CinemachineFreeLook camera)
+    {
+        // Reset initial values
+        camera.m_XAxis.Value = 0f;
+        camera.m_YAxis.Value = 0.5f;
+        
+        // Use Unity's input system through Cinemachine
+        camera.m_XAxis.m_InputAxisName = "Mouse X";
+        camera.m_YAxis.m_InputAxisName = "Mouse Y";
+        
+        // WebGL-friendly settings
+        camera.m_XAxis.m_MaxSpeed = 175f;
+        camera.m_YAxis.m_MaxSpeed = 1.5f;
+        
+        // Minimal response times for WebGL
+        camera.m_XAxis.m_AccelTime = 0f;
+        camera.m_XAxis.m_DecelTime = 0f;
+        camera.m_YAxis.m_AccelTime = 0f;
+        camera.m_YAxis.m_DecelTime = 0f;
     }
 } 

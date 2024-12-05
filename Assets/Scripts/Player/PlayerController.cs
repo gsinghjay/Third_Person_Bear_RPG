@@ -15,6 +15,7 @@ public class PlayerController : MonoBehaviour
     [Header("Camera Settings")]
     [SerializeField] private float minVerticalAngle = -30f;
     [SerializeField] private float maxVerticalAngle = 60f;
+    [SerializeField] private Transform cameraTarget;
     
     private Animator animator;
     private CharacterController characterController;
@@ -40,6 +41,16 @@ public class PlayerController : MonoBehaviour
         // Lock and hide cursor
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+        
+        // Setup camera target
+        if (cameraTarget == null)
+        {
+            GameObject targetObj = new GameObject("CameraTarget");
+            cameraTarget = targetObj.transform;
+            cameraTarget.parent = transform;
+            cameraTarget.localPosition = new Vector3(0f, 1.5f, 0f); // Adjust height as needed
+            cameraTarget.localRotation = Quaternion.identity;
+        }
     }
     
     private void Start()
@@ -108,46 +119,53 @@ public class PlayerController : MonoBehaviour
     
     private void Update()
     {
-        HandleCameraRotation();
         HandleMovement();
         HandleCombat();
         HandleJump();
         UpdateAnimations();
     }
     
-    private void HandleCameraRotation()
-    {
-        // Get mouse input
-        Vector2 cameraInput = playerInput.CameraInput;
-        
-        // Update rotation values based on mouse input (only Y for player)
-        currentRotationY += cameraInput.x;
-        
-        // Only rotate the player, let Cinemachine handle the camera
-        transform.rotation = Quaternion.Euler(0f, currentRotationY, 0f);
-    }
-    
     private void HandleMovement()
     {
-        // Get input from PlayerInput
         Vector2 input = playerInput.MovementInput;
         
         if (input.magnitude >= 0.1f)
         {
-            // Always use transform.forward/right for consistent movement relative to player
-            Vector3 forward = transform.forward;
-            Vector3 right = transform.right;
+            // Cache camera transform for better performance
+            Transform mainCameraTransform = Camera.main.transform;
             
-            // Calculate movement direction
-            moveDirection = (forward * input.y + right * input.x).normalized;
+            // Get the camera's forward and right vectors
+            Vector3 cameraForward = mainCameraTransform.forward;
+            Vector3 cameraRight = mainCameraTransform.right;
+            
+            // Project vectors onto the horizontal plane (y = 0)
+            cameraForward.y = 0;
+            cameraRight.y = 0;
+            cameraForward.Normalize();
+            cameraRight.Normalize();
+            
+            // Calculate move direction relative to camera orientation
+            moveDirection = (cameraForward * input.y + cameraRight * input.x).normalized;
+            
+            // Optimize rotation calculation
+            if (moveDirection != Vector3.zero)
+            {
+                transform.rotation = Quaternion.RotateTowards(
+                    transform.rotation,
+                    Quaternion.LookRotation(moveDirection),
+                    rotationSpeed * Time.deltaTime * 100f
+                );
+            }
             
             // Move in the calculated direction
             float currentSpeed = playerInput.IsSprinting ? sprintSpeed : moveSpeed;
-            characterController.Move(moveDirection * currentSpeed * Time.deltaTime);
+            Vector3 movement = moveDirection * (currentSpeed * Time.deltaTime);
+            characterController.Move(movement + new Vector3(0, verticalVelocity * Time.deltaTime, 0));
         }
         else
         {
             moveDirection = Vector3.zero;
+            characterController.Move(new Vector3(0, verticalVelocity * Time.deltaTime, 0));
         }
     }
     
@@ -158,7 +176,29 @@ public class PlayerController : MonoBehaviour
     
     private void HandleJump()
     {
-        // Implement jump logic here
+        if (characterController.isGrounded)
+        {
+            verticalVelocity = -0.5f; // Small downward force when grounded
+            
+            if (playerInput.IsJumping)
+            {
+                verticalVelocity = jumpForce;
+                animator.SetTrigger("Jump");
+            }
+        }
+        else
+        {
+            // Apply gravity
+            verticalVelocity += Physics.gravity.y * Time.deltaTime;
+        }
+        
+        // Apply vertical movement
+        Vector3 verticalMovement = new Vector3(0f, verticalVelocity * Time.deltaTime, 0f);
+        characterController.Move(verticalMovement);
+        
+        // Update animation parameters
+        animator.SetFloat("VerticalVelocity", verticalVelocity);
+        animator.SetBool("IsGrounded", characterController.isGrounded);
     }
     
     private void UpdateAnimations()

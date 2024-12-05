@@ -2,8 +2,8 @@ using UnityEngine;
 
 public class PlayerInput : MonoBehaviour, IPlayerInput
 {
-    [Header("Mouse Settings")]
-    [SerializeField] private float mouseSensitivity = 2f;
+    [Header("Input Settings")]
+    [SerializeField] private float mouseSensitivity = 1f;
     [SerializeField] private bool invertMouseY = false;
     
     public Vector2 MovementInput => new Vector2(
