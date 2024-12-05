@@ -1,10 +1,56 @@
-# Bear Hunter RPG - Terrain Generation
+# Bear Hunter RPG - Character & Terrain
 
 ## Project Overview
 This is a Third Person RPG where players hunt different types of bears across various forest regions. The game features a central village hub with paths leading to three distinct combat arenas and a victory tower.
 
 ## Current Implementation
-### Terrain Generation System
+
+### Player Character System
+- Using MaleCharacterPBR from RPG Tiny Hero Duo asset
+- Character Controller with terrain-aware positioning
+- Input system using interface segregation (IPlayerInput)
+- Animation states for movement and combat
+- WebGL-optimized character materials and shaders
+
+### Required Packages
+```json
+{
+    "com.unity.cinemachine": "2.10.3",
+    "com.unity.render-pipelines.universal": "14.0.11",
+    "com.unity.terrain-tools": "5.0.5"
+}
+```
+
+### Layer Setup
+```
+Layer 6: Ground
+Layer 7: Terrain
+Layer 8: Environment
+Layer 9: Player
+Layer 10: Enemy
+Layer 11: Interactable
+```
+
+## Character Settings Guide
+
+### Player Controller Settings
+```
+Move Speed: 5
+Rotation Speed: 10
+Character Controller:
+- Height: 1.5
+- Radius: 0.4
+- Slope Limit: 45
+- Step Offset: 0.3
+```
+
+### Animation States
+- Idle_Battle_SwordAndShield
+- MoveFWD_Battle_InPlace_SwordAndShield
+- Attack01_SwordAndShield
+- Victory_Battle_SwordAndShield
+
+## Terrain Generation System
 We've implemented a custom terrain generator that creates:
 - Central village hub (flat area)
 - Three combat arenas for bear encounters
@@ -102,6 +148,10 @@ Base Texture Resolution: 1024
 - Changes take effect upon clicking "Generate Terrain"
 - Settings can be adjusted in real-time
 - Generator preserves terrain data resolution
+- Character position starts at terrain center
+- Animation controllers are WebGL-optimized
+- PBR materials used for best visual quality
+- Input system is abstracted for future platform support
 
 ## Usage Instructions
 1. Create a new terrain in Unity (3D Object > Terrain)
@@ -117,13 +167,17 @@ Base Texture Resolution: 1024
 7. Save terrain changes in Unity
 
 ## Next Steps
-1. Add terrain texturing
-2. Implement tree placement
-3. Add environment props
-4. Set up lighting and atmosphere
-5. Configure player character and camera
+1. Implement combat system
+2. Add bear AI and behaviors
+3. Set up quest/mission system
+4. Add inventory management
+5. Implement save/load system
 
 ## Troubleshooting
+- If character movement feels sluggish: Adjust moveSpeed in PlayerController
+- If rotations are too fast/slow: Modify rotationSpeed
+- If character clips through terrain: Check CharacterController settings
+- If animations are choppy: Verify WebGL optimization settings
 - If terrain appears too steep: Reduce mountain height or increase noise scale
 - If paths are too narrow: Increase path width values
 - If transitions are harsh: Increase transition zone or path smoothness
