@@ -11,13 +11,11 @@ namespace Player.States
 
         public override void Enter()
         {
-            animator.SetBool("IsCombat", true);
             attackTimer = 0f;
         }
 
         public override void Exit()
         {
-            animator.SetBool("IsCombat", false);
         }
 
         public override void Update()
@@ -69,7 +67,6 @@ namespace Player.States
             if (characterController.isGrounded && playerInput.IsJumping)
             {
                 playerController.VerticalVelocity = playerController.JumpForce * 0.8f; // Reduced jump height in combat
-                animator.SetTrigger("Jump");
             }
         }
     }

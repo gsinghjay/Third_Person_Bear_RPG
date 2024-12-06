@@ -9,8 +9,7 @@ namespace Player.States
 
         public override void Enter()
         {
-            animator.SetBool("IsCombat", false);
-            animator.SetBool("IsSprinting", false);
+            // No need to set animation parameters here
         }
 
         public override void HandleMovement(Vector2 input)
@@ -47,7 +46,6 @@ namespace Player.States
             if (characterController.isGrounded && playerInput.IsJumping)
             {
                 playerController.VerticalVelocity = playerController.JumpForce;
-                animator.SetTrigger("Jump");
             }
         }
     }

@@ -40,10 +40,6 @@ namespace Player.States
 
         protected void UpdateAnimations(bool isMoving)
         {
-            animator.SetBool("IsMoving", isMoving);
-            animator.SetBool("IsGrounded", characterController.isGrounded);
-            animator.SetFloat("VerticalVelocity", playerController.VerticalVelocity);
-            
             float speedValue = 0f;
             if (this is IdleState)
                 speedValue = isMoving ? 0.5f : 0f;
