@@ -1,10 +1,13 @@
 using UnityEngine;
+using UnityEngine.AI;
 using Enemies.States;
 using Enemies.Interfaces;
 using Enemies.Types;
+using System.Collections;
 
 namespace Enemies.Core
 {
+    [ExecuteInEditMode]
     public abstract class BearController : MonoBehaviour, IBear
     {
         [Header("Base Stats")]
@@ -21,18 +24,32 @@ namespace Enemies.Core
         public abstract BearType Type { get; }
         
         public Animator Animator { get; private set; }
-        public CharacterController CharacterController { get; private set; }
-        public float VerticalVelocity { get; set; }
+        public NavMeshAgent Agent { get; private set; }
         public Transform PlayerTransform { get; private set; }
+        public CapsuleCollider Collider { get; private set; }
 
         protected IBearState currentState;
 
         protected virtual void Awake()
         {
             Animator = GetComponent<Animator>();
-            CharacterController = GetComponent<CharacterController>();
+            Agent = GetComponent<NavMeshAgent>();
+            Collider = GetComponent<CapsuleCollider>();
             PlayerTransform = GameObject.FindGameObjectWithTag("Player").transform;
             Health = maxHealth;
+            
+            if (Agent != null)
+            {
+                Agent.speed = moveSpeed;
+                Agent.acceleration = 12f;
+                Agent.angularSpeed = 120f;
+                Agent.stoppingDistance = attackRange;
+                Agent.radius = 0.6f;
+                Agent.height = 2f;
+                
+                Agent.obstacleAvoidanceType = ObstacleAvoidanceType.HighQualityObstacleAvoidance;
+                Agent.avoidancePriority = 50;
+            }
         }
 
         public virtual void Initialize(Vector3 spawnPosition)
@@ -60,8 +77,8 @@ namespace Enemies.Core
         {
             Animator.SetTrigger("Death");
             
-            if (CharacterController != null)
-                CharacterController.enabled = false;
+            if (Agent != null)
+                Agent.enabled = false;
             
             Destroy(gameObject, 2f);
         }
@@ -73,6 +90,12 @@ namespace Enemies.Core
             currentState.Enter();
         }
 
+        protected virtual void Start()
+        {
+            Debug.Log("Bear Start - Initializing state");
+            Initialize(transform.position);
+        }
+
         protected virtual void Update()
         {
             currentState?.Update();
@@ -81,6 +104,23 @@ namespace Enemies.Core
         public void DealDamage()
         {
             Debug.Log($"{Type} Bear deals damage to the player!");
+        }
+
+        // Add debug visualization
+        private void OnDrawGizmosSelected()
+        {
+            // Draw detection range
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawWireSphere(transform.position, detectionRange);
+            
+            // Draw attack range
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(transform.position, attackRange);
+        }
+
+        public void StartStateCoroutine(IEnumerator routine)
+        {
+            StartCoroutine(routine);
         }
     }
 } 

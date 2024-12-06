@@ -5,13 +5,11 @@ namespace Enemies.States
 {
     public class BearChaseState : BearStateBase
     {
-        private readonly float moveSpeed;
         private readonly float attackRange;
         private Vector3 targetPosition;
 
         public BearChaseState(BearController controller) : base(controller)
         {
-            moveSpeed = controller.MoveSpeed;
             attackRange = controller.AttackRange;
         }
 
@@ -19,6 +17,13 @@ namespace Enemies.States
         {
             base.Enter();
             animator.SetBool("Run Forward", true);
+            agent.isStopped = false;
+        }
+
+        public override void Exit()
+        {
+            base.Exit();
+            agent.isStopped = true;
         }
 
         public override void Update()
@@ -30,24 +35,20 @@ namespace Enemies.States
 
         public override void HandleMovement()
         {
+            if (bearController.PlayerTransform == null) return;
+
             targetPosition = bearController.PlayerTransform.position;
-            Vector3 direction = (targetPosition - bearController.transform.position).normalized;
-            
-            // Rotate towards target
-            if (direction != Vector3.zero)
+            agent.SetDestination(targetPosition);
+
+            if (agent.velocity.magnitude > 0.1f)
             {
-                Quaternion targetRotation = Quaternion.LookRotation(direction);
+                Quaternion targetRotation = Quaternion.LookRotation(agent.velocity.normalized);
                 bearController.transform.rotation = Quaternion.Slerp(
                     bearController.transform.rotation,
                     targetRotation,
                     10f * Time.deltaTime
                 );
             }
-
-            // Move towards target
-            Vector3 movement = direction * moveSpeed * Time.deltaTime;
-            movement.y = bearController.VerticalVelocity;
-            characterController.Move(movement);
         }
 
         private void CheckForAttackRange()
