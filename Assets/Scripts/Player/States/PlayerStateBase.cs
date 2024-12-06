@@ -40,9 +40,19 @@ namespace Player.States
 
         protected void UpdateAnimations(bool isMoving)
         {
-            animator.SetBool("IsMoving", isMoving);
-            animator.SetBool("IsGrounded", characterController.isGrounded);
-            animator.SetFloat("VerticalVelocity", playerController.VerticalVelocity);
+            float speedValue = 0f;
+            if (this is IdleState)
+                speedValue = isMoving ? 0.5f : 0f;
+            else if (this is SprintState)
+                speedValue = 1f;
+            else if (this is CombatState)
+                speedValue = isMoving ? 0.3f : 0f;
+            
+            animator.SetFloat("Speed", Mathf.Lerp(
+                animator.GetFloat("Speed"),
+                speedValue,
+                Time.deltaTime * 10f
+            ));
         }
     }
 } 

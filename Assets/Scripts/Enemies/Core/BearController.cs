@@ -60,7 +60,9 @@ namespace Enemies.Core
 
         public virtual void TakeDamage(float damage, DamageType damageType)
         {
-            Health -= CalculateDamage(damage, damageType);
+            float finalDamage = CalculateDamage(damage, damageType);
+            Debug.Log($"Bear took {finalDamage} damage of type {damageType}");
+            Health -= finalDamage;
             
             if (Health <= 0)
             {
