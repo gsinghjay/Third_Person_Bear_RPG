@@ -6,8 +6,12 @@ namespace Player.States
     public class CombatState : PlayerStateBase
     {
         private float attackTimer;
+        private CombatInputHandler combatHandler;
 
-        public CombatState(PlayerController controller) : base(controller) { }
+        public CombatState(PlayerController controller) : base(controller) 
+        {
+            combatHandler = controller.GetComponent<CombatInputHandler>();
+        }
 
         public override void Enter()
         {
@@ -23,6 +27,25 @@ namespace Player.States
             if (attackTimer > 0)
             {
                 attackTimer -= Time.deltaTime;
+            }
+            
+            // Check for state transitions
+            CheckStateTransitions();
+        }
+
+        private void CheckStateTransitions()
+        {
+            // If we're not attacking or defending, allow state changes
+            if (attackTimer <= 0 && !playerInput.IsAttacking)
+            {
+                if (playerInput.IsSprinting && playerInput.MovementInput.magnitude > 0.1f)
+                {
+                    playerController.ChangeState(new SprintState(playerController));
+                }
+                else if (!playerInput.IsDefending)
+                {
+                    playerController.ChangeState(new IdleState(playerController));
+                }
             }
         }
 
@@ -47,18 +70,14 @@ namespace Player.States
             {
                 if (playerInput.IsAttacking)
                 {
-                    animator.SetTrigger("Attack");
+                    Debug.Log("Combat State: Attack input detected");
+                    combatHandler.PerformAttack();
                     attackTimer = playerController.AttackDuration;
                 }
-                else if (playerInput.IsDefending)
-                {
-                    animator.SetBool("IsDefending", true);
-                }
-                else if (!playerInput.IsDefending)
-                {
-                    animator.SetBool("IsDefending", false);
-                    playerController.ChangeState(new IdleState(playerController));
-                }
+            }
+            else
+            {
+                Debug.Log($"Combat State: Attack on cooldown: {attackTimer}");
             }
         }
 

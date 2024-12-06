@@ -1,146 +1,68 @@
 using UnityEngine;
-using System.Collections;
 using Enemies.Types;
 using Enemies.Interfaces;
 
 public class WeaponController : MonoBehaviour 
 {
     [Header("Weapon Settings")]
-    [SerializeField] private float baseDamage = 20f;
-    [SerializeField] private float elementalDamageMultiplier = 1.5f;
-    [SerializeField] private float attackCooldown = 0.5f;
-    [SerializeField] private float rangedAttackSpeed = 15f;
-    
-    [Header("Collision Detection")]
+    [SerializeField] private float baseDamage = 40f;
+    [SerializeField] private float attackRange = 5f;
     [SerializeField] private LayerMask enemyLayer;
-    [SerializeField] private Transform weaponTip;
-    [SerializeField] private Transform weaponBase;
-    [SerializeField] private float weaponTraceWidth = 0.5f;
+    [SerializeField] private float attackRadius = 2f;
 
-    [Header("Effects")]
-    [SerializeField] private ParticleSystem[] elementalEffects;
-    [SerializeField] private GameObject rangedAttackPrefab;
-    
     private DamageType currentDamageType = DamageType.Physical;
-    private bool canAttack = true;
-    private Animator animator;
-    private readonly int attackHash = Animator.StringToHash("Attack");
+    private Camera mainCamera;
 
     private void Awake()
     {
-        animator = GetComponentInParent<Animator>();
+        mainCamera = Camera.main;
     }
 
     public void Attack()
     {
-        if (!canAttack) return;
-        
-        animator.SetTrigger(attackHash);
-        StartCoroutine(PerformAttack());
-    }
+        Vector3 screenCenter = new Vector3(Screen.width * 0.5f, Screen.height * 0.5f, 0f);
+        Ray ray = mainCamera.ScreenPointToRay(screenCenter);
+        Debug.DrawRay(ray.origin, ray.direction * attackRange, Color.red, 1f);
 
-    public void RangedAttack()
-    {
-        if (!canAttack) return;
-        
-        animator.SetTrigger(attackHash);
-        StartCoroutine(PerformRangedAttack());
-    }
+        Vector3 attackPoint = ray.origin + ray.direction * attackRange;
+        Debug.Log($"Attacking at point: {attackPoint}");
 
-    private IEnumerator PerformAttack()
-    {
-        canAttack = false;
+        Collider[] hits = Physics.OverlapSphere(attackPoint, attackRadius, enemyLayer);
+        Debug.Log($"Found {hits.Length} potential targets in range");
 
-        // Wait for the attack animation to reach its damage frame
-        yield return new WaitForSeconds(0.2f);
-
-        // Perform weapon trace
-        DetectHits();
-
-        // Apply attack cooldown
-        yield return new WaitForSeconds(attackCooldown);
-        canAttack = true;
-    }
-
-    private IEnumerator PerformRangedAttack()
-    {
-        canAttack = false;
-
-        // Wait for the attack animation to reach its projectile spawn frame
-        yield return new WaitForSeconds(0.3f);
-
-        SpawnRangedAttack();
-
-        // Apply attack cooldown
-        yield return new WaitForSeconds(attackCooldown);
-        canAttack = true;
-    }
-
-    private void DetectHits()
-    {
-        // Create a capsule collider between weapon base and tip
-        Vector3 direction = weaponTip.position - weaponBase.position;
-        float distance = direction.magnitude;
-        
-        RaycastHit[] hits = Physics.SphereCastAll(
-            weaponBase.position,
-            weaponTraceWidth,
-            direction.normalized,
-            distance,
-            enemyLayer
-        );
-
-        foreach (RaycastHit hit in hits)
+        bool hitSomething = false;
+        foreach (Collider hit in hits)
         {
-            if (hit.collider.TryGetComponent<IBear>(out var bear))
+            if (hit.TryGetComponent<IBear>(out var bear))
             {
-                float damage = CalculateDamage();
-                bear.TakeDamage(damage, currentDamageType);
+                hitSomething = true;
+                Debug.Log($"Hit bear: {hit.gameObject.name}");
+                bear.TakeDamage(baseDamage, currentDamageType);
             }
         }
-    }
 
-    private void SpawnRangedAttack()
-    {
-        GameObject projectile = Instantiate(rangedAttackPrefab, weaponTip.position, transform.rotation);
-        WeaponProjectile projectileScript = projectile.GetComponent<WeaponProjectile>();
-        
-        if (projectileScript != null)
+        if (!hitSomething)
         {
-            projectileScript.Initialize(
-                currentDamageType,
-                CalculateDamage(),
-                transform.forward * rangedAttackSpeed
-            );
+            Debug.Log($"No bears hit. Layer mask: {enemyLayer.value}, Attack radius: {attackRadius}");
         }
-    }
-
-    private float CalculateDamage()
-    {
-        return currentDamageType == DamageType.Physical ? 
-            baseDamage : 
-            baseDamage * elementalDamageMultiplier;
     }
 
     public void SetDamageType(DamageType type)
     {
         currentDamageType = type;
-        UpdateElementalEffects();
+        Debug.Log($"Switched to {type} damage type");
     }
 
-    private void UpdateElementalEffects()
+    private void OnDrawGizmosSelected()
     {
-        // Disable all effects first
-        foreach (var effect in elementalEffects)
+        if (mainCamera == null) mainCamera = Camera.main;
+        if (mainCamera != null)
         {
-            effect.Stop();
-        }
-
-        // Enable effect for current type if it exists
-        if (currentDamageType != DamageType.Physical && 
-            (int)currentDamageType - 1 < elementalEffects.Length)
-        {
-            elementalEffects[(int)currentDamageType - 1].Play();
+            Vector3 screenCenter = new Vector3(Screen.width * 0.5f, Screen.height * 0.5f, 0f);
+            Ray ray = mainCamera.ScreenPointToRay(screenCenter);
+            Vector3 attackPoint = ray.origin + ray.direction * attackRange;
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(attackPoint, attackRadius);
         }
     }
 } 
