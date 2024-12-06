@@ -5,24 +5,40 @@ namespace Enemies.States
 {
     public class BearAttackState : BearStateBase
     {
-        private float attackDuration = 1.5f;
+        private readonly float attackDuration = 1.5f;
         private float attackTimer;
         private bool hasDealtDamage;
+        private readonly int attackVariations = 5;
 
         public BearAttackState(BearController controller) : base(controller) { }
 
         public override void Enter()
         {
-            animator.SetBool("IsMoving", false);
-            animator.SetTrigger("Attack");
+            base.Enter();
+            animator.SetBool("Combat Idle", true);
+            TriggerAttackAnimation();
             attackTimer = attackDuration;
             hasDealtDamage = false;
         }
 
         public override void Update()
         {
-            ApplyGravity();
-            
+            base.Update();
+            HandleCombat();
+            UpdateAttackState();
+        }
+
+        public override void HandleCombat()
+        {
+            if (!hasDealtDamage && attackTimer <= attackDuration * 0.5f)
+            {
+                bearController.DealDamage();
+                hasDealtDamage = true;
+            }
+        }
+
+        private void UpdateAttackState()
+        {
             // Look at player during attack
             Vector3 direction = (bearController.PlayerTransform.position - bearController.transform.position).normalized;
             direction.y = 0;
@@ -32,26 +48,17 @@ namespace Enemies.States
             }
 
             attackTimer -= Time.deltaTime;
-
-            // Deal damage at specific point in animation
-            if (!hasDealtDamage && attackTimer <= attackDuration * 0.5f)
-            {
-                TryDealDamage();
-                hasDealtDamage = true;
-            }
-
             if (attackTimer <= 0)
             {
-                // Check if player is still in range
                 float distanceToPlayer = Vector3.Distance(
-                    bearController.transform.position,
+                    bearController.transform.position, 
                     bearController.PlayerTransform.position
                 );
 
                 if (distanceToPlayer <= bearController.AttackRange)
                 {
-                    // Start another attack
-                    bearController.ChangeState(new BearAttackState(bearController));
+                    // Chain into another attack
+                    Enter();
                 }
                 else
                 {
@@ -60,16 +67,10 @@ namespace Enemies.States
             }
         }
 
-        private void TryDealDamage()
+        private void TriggerAttackAnimation()
         {
-            // Check if player is in attack arc
-            Vector3 directionToPlayer = bearController.PlayerTransform.position - bearController.transform.position;
-            float angleToPlayer = Vector3.Angle(bearController.transform.forward, directionToPlayer);
-
-            if (angleToPlayer <= 45f && directionToPlayer.magnitude <= bearController.AttackRange)
-            {
-                bearController.DealDamage();
-            }
+            int attackNumber = Random.Range(1, attackVariations + 1);
+            animator.SetTrigger($"Attack{attackNumber}");
         }
     }
 } 

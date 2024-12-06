@@ -58,7 +58,11 @@ namespace Enemies.Core
 
         protected virtual void Die()
         {
-            Animator.SetTrigger("Die");
+            Animator.SetTrigger("Death");
+            
+            if (CharacterController != null)
+                CharacterController.enabled = false;
+            
             Destroy(gameObject, 2f);
         }
 

@@ -12,14 +12,14 @@ namespace Enemies.States
 
         public override void Enter()
         {
-            animator.SetBool("IsMoving", false);
-            animator.SetTrigger("Idle");
+            base.Enter();
+            animator.SetBool("Idle", true);
             detectionCheckTimer = 0f;
         }
 
         public override void Update()
         {
-            ApplyGravity();
+            base.Update();
             
             detectionCheckTimer += Time.deltaTime;
             if (detectionCheckTimer >= detectionCheckInterval)
@@ -31,7 +31,11 @@ namespace Enemies.States
 
         private void CheckForPlayer()
         {
-            float distanceToPlayer = Vector3.Distance(bearController.transform.position, bearController.PlayerTransform.position);
+            float distanceToPlayer = Vector3.Distance(
+                bearController.transform.position, 
+                bearController.PlayerTransform.position
+            );
+            
             if (distanceToPlayer <= bearController.DetectionRange)
             {
                 bearController.ChangeState(new BearChaseState(bearController));

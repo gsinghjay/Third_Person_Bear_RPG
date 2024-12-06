@@ -5,8 +5,8 @@ namespace Enemies.States
 {
     public class BearChaseState : BearStateBase
     {
-        private float moveSpeed;
-        private float attackRange;
+        private readonly float moveSpeed;
+        private readonly float attackRange;
         private Vector3 targetPosition;
 
         public BearChaseState(BearController controller) : base(controller)
@@ -17,13 +17,13 @@ namespace Enemies.States
 
         public override void Enter()
         {
-            animator.SetBool("IsMoving", true);
-            animator.SetTrigger("Run");
+            base.Enter();
+            animator.SetBool("Run Forward", true);
         }
 
         public override void Update()
         {
-            ApplyGravity();
+            base.Update();
             HandleMovement();
             CheckForAttackRange();
         }
@@ -52,7 +52,11 @@ namespace Enemies.States
 
         private void CheckForAttackRange()
         {
-            float distanceToPlayer = Vector3.Distance(bearController.transform.position, targetPosition);
+            float distanceToPlayer = Vector3.Distance(
+                bearController.transform.position, 
+                targetPosition
+            );
+            
             if (distanceToPlayer <= attackRange)
             {
                 bearController.ChangeState(new BearAttackState(bearController));

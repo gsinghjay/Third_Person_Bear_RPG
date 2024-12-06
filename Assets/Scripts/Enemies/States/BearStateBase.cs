@@ -5,20 +5,28 @@ namespace Enemies.States
 {
     public abstract class BearStateBase : IBearState
     {
-        protected BearController bearController;
-        protected Animator animator;
-        protected CharacterController characterController;
+        protected readonly BearController bearController;
+        protected readonly Animator animator;
+        protected readonly CharacterController characterController;
 
-        public BearStateBase(BearController controller)
+        protected BearStateBase(BearController controller)
         {
             bearController = controller;
             animator = controller.Animator;
             characterController = controller.CharacterController;
         }
 
-        public virtual void Enter() { }
+        public virtual void Enter() 
+        {
+            ResetAllBoolParameters();
+        }
+        
         public virtual void Exit() { }
-        public virtual void Update() { }
+        public virtual void Update() 
+        {
+            ApplyGravity();
+        }
+        
         public virtual void HandleMovement() { }
         public virtual void HandleCombat() { }
 
@@ -34,10 +42,16 @@ namespace Enemies.States
             }
         }
 
-        protected void UpdateAnimations(bool isMoving)
+        protected void ResetAllBoolParameters()
         {
-            animator.SetBool("IsMoving", isMoving);
-            animator.SetBool("IsGrounded", characterController.isGrounded);
+            animator.SetBool("Idle", false);
+            animator.SetBool("Combat Idle", false);
+            animator.SetBool("Run Forward", false);
+            animator.SetBool("Walk Forward", false);
+            animator.SetBool("Walk Back", false);
+            animator.SetBool("Run Back", false);
+            animator.SetBool("Jump Loop", false);
+            animator.SetBool("Stunned Loop", false);
         }
     }
 } 
