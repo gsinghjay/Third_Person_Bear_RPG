@@ -50,13 +50,18 @@ namespace Player.States
 
         protected void ApplyGravity()
         {
-            if (characterController.isGrounded)
+            if (characterController.isGrounded && playerController.VerticalVelocity <= 0)
             {
-                playerController.VerticalVelocity = -0.5f;
+                playerController.VerticalVelocity = -0.5f; // Small downward force when grounded
             }
             else
             {
+                // Apply gravity
                 playerController.VerticalVelocity += Physics.gravity.y * Time.deltaTime;
+                
+                // Terminal velocity
+                if (playerController.VerticalVelocity < -20f)
+                    playerController.VerticalVelocity = -20f;
             }
         }
 
@@ -80,6 +85,35 @@ namespace Player.States
             
             Debug.Log($"{currentState}: Updating animation speed to {speedValue:F2}");
             animationController.UpdateMovementAnimation(speedValue, movementInput);
+        }
+
+        protected void HandleJumpAnimation(bool isGrounded, float verticalVelocity)
+        {
+            if (animationController == null) return;
+
+            // Start jump
+            if (!isGrounded && verticalVelocity > 0 && !animationController.IsPlayingJumpAnimation())
+            {
+                animationController.StartJump();
+            }
+            // Landing
+            else if (isGrounded && animationController.IsPlayingJumpAnimation())
+            {
+                animationController.EndJump();
+            }
+            // Falling
+            else if (!isGrounded && verticalVelocity < 0)
+            {
+                if (!animationController.IsPlayingJumpAnimation())
+                {
+                    animationController.StartJump();
+                }
+                // Make sure we're in the jump loop animation while falling
+                else if (!animationController.IsInJumpLoop())
+                {
+                    animationController.PlayJumpLoop();
+                }
+            }
         }
     }
 } 

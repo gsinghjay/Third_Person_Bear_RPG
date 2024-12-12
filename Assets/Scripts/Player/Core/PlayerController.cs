@@ -90,44 +90,40 @@ namespace Player.Core
 
         public Vector3 CalculateMoveDirection(Vector2 input)
         {
-            // Get camera forward and right, but ignore Y component
-            Vector3 cameraForward = Vector3.ProjectOnPlane(Camera.main.transform.forward, Vector3.up).normalized;
-            Vector3 cameraRight = Vector3.ProjectOnPlane(Camera.main.transform.right, Vector3.up).normalized;
+            if (input.magnitude < 0.1f) return Vector3.zero;
+
+            // Get camera forward and right vectors
+            Vector3 forward = cameraTransform.forward;
+            Vector3 right = cameraTransform.right;
             
-            // Calculate move direction relative to camera
-            Vector3 moveDirection = (cameraForward * input.y + cameraRight * input.x);
-            
-            // Normalize only if magnitude > 1
-            if (moveDirection.magnitude > 1f)
-                moveDirection.Normalize();
-        
+            // Project vectors onto XZ plane
+            forward.y = 0;
+            right.y = 0;
+            forward.Normalize();
+            right.Normalize();
+
+            // Calculate target direction based on input
+            Vector3 moveDirection = (forward * input.y + right * input.x);
+            moveDirection.Normalize();
+
             return moveDirection;
         }
 
         public void Move(Vector3 moveDirection, float speedMultiplier = 1f)
         {
+            Vector3 movement = Vector3.zero;
+            
+            // Handle horizontal movement
             if (moveDirection.magnitude >= 0.1f)
             {
-                // Calculate the target rotation based on input direction
-                float targetAngle = Mathf.Atan2(moveDirection.x, moveDirection.z) * Mathf.Rad2Deg;
-                
-                // Smoothly rotate the player
-                Quaternion targetRotation = Quaternion.Euler(0f, targetAngle, 0f);
-                transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, Time.deltaTime * rotationSpeed);
-                
-                // Move in the direction the character is facing
-                Vector3 movement = transform.forward * moveDirection.magnitude;
-                float currentSpeed = moveSpeed * speedMultiplier;
-                
-                // Apply movement and gravity
-                CharacterController.Move(movement * currentSpeed * Time.deltaTime + 
-                                       new Vector3(0, VerticalVelocity * Time.deltaTime, 0));
+                movement = moveDirection * (MoveSpeed * speedMultiplier);
             }
-            else
-            {
-                // Apply only gravity when not moving horizontally
-                CharacterController.Move(new Vector3(0, VerticalVelocity * Time.deltaTime, 0));
-            }
+            
+            // Apply gravity/vertical movement
+            movement.y = VerticalVelocity;
+            
+            // Apply final movement
+            CharacterController.Move(movement * Time.deltaTime);
         }
 
         private void SetupCamera()
