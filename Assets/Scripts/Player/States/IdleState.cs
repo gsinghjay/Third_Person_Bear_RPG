@@ -30,7 +30,7 @@ namespace Player.States
             }
 
             ApplyGravity();
-            UpdateAnimations(input.magnitude >= 0.1f);
+            UpdateAnimations(input.magnitude >= 0.1f, input);
         }
 
         public override void HandleCombat()

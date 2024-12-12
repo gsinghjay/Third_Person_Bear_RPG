@@ -81,14 +81,41 @@ public class CameraController : MonoBehaviour
 
     private void SetupFreeLookRig(CinemachineFreeLook camera, float distance, float height)
     {
-        // Setup the three rigs (top, middle, bottom)
-        camera.m_Orbits[0] = new CinemachineFreeLook.Orbit(height * 1.5f, distance * 0.8f); // Top rig
-        camera.m_Orbits[1] = new CinemachineFreeLook.Orbit(height, distance);               // Middle rig
-        camera.m_Orbits[2] = new CinemachineFreeLook.Orbit(height * 0.5f, distance * 0.8f); // Bottom rig
+        // Top rig (high angle)
+        camera.m_Orbits[0] = new CinemachineFreeLook.Orbit(height * 1.2f, distance);
         
-        // Set common properties
-        camera.m_XAxis.Value = 0f;
-        camera.m_YAxis.Value = 0.5f; // Center the camera vertically
+        // Middle rig (eye level)
+        camera.m_Orbits[1] = new CinemachineFreeLook.Orbit(height * 0.8f, distance);
+        
+        // Bottom rig (low angle)
+        camera.m_Orbits[2] = new CinemachineFreeLook.Orbit(height * 0.5f, distance);
+        
+        // Increase follow speed and responsiveness for each rig
+        for (int i = 0; i < 3; i++)
+        {
+            var rig = camera.GetRig(i);
+            var transposer = rig.GetCinemachineComponent<CinemachineTransposer>();
+            if (transposer != null)
+            {
+                transposer.m_XDamping = 0.5f;  // Reduced from 1f
+                transposer.m_YDamping = 0.5f;  // Reduced from 1f
+                transposer.m_ZDamping = 0.5f;  // Reduced from 1f
+                
+                // Set follow offset
+                transposer.m_FollowOffset = new Vector3(0, height, -distance);
+                transposer.m_BindingMode = CinemachineTransposer.BindingMode.LockToTargetWithWorldUp;
+            }
+        }
+        
+        // Adjust camera rotation speeds
+        camera.m_XAxis.m_MaxSpeed = 200f;  // Reduced from 300f
+        camera.m_YAxis.m_MaxSpeed = 1.5f;  // Reduced from 2f
+        
+        // Make camera more responsive but with some smoothing
+        camera.m_XAxis.m_AccelTime = 0.2f;
+        camera.m_XAxis.m_DecelTime = 0.2f;
+        camera.m_YAxis.m_AccelTime = 0.2f;
+        camera.m_YAxis.m_DecelTime = 0.2f;
     }
     
     public void SetCombatMode(bool isInCombat)
@@ -110,36 +137,27 @@ public class CameraController : MonoBehaviour
         if (input != null)
         {
             Vector2 cameraInput = input.CameraInput;
-            normalCamera.m_XAxis.m_InputAxisValue = cameraInput.x;
-            normalCamera.m_YAxis.m_InputAxisValue = cameraInput.y;
-            
-            combatCamera.m_XAxis.m_InputAxisValue = cameraInput.x;
-            combatCamera.m_YAxis.m_InputAxisValue = cameraInput.y;
-            
-            sprintCamera.m_XAxis.m_InputAxisValue = cameraInput.x;
-            sprintCamera.m_YAxis.m_InputAxisValue = cameraInput.y;
-        }
-        
-        // Update camera position based on priorities
-        if (sprintCamera.Priority > 0)
-        {
-            UpdateCameraSettings(sprintCamera, sprintFOV);
-        }
-        else if (combatCamera.Priority > 0)
-        {
-            UpdateCameraSettings(combatCamera, combatFOV);
-        }
-        else
-        {
-            UpdateCameraSettings(normalCamera, normalFOV);
+            UpdateCameraRotation(cameraInput);
         }
     }
     
-    private void UpdateCameraSettings(CinemachineFreeLook camera, float fov)
+    private void UpdateCameraRotation(Vector2 input)
     {
-        camera.m_Lens.FieldOfView = fov;
+        var activeCamera = GetActiveCamera();
+        if (activeCamera != null)
+        {
+            activeCamera.m_XAxis.m_InputAxisValue = input.x * mouseSensitivity;
+            activeCamera.m_YAxis.m_InputAxisValue = input.y * mouseSensitivity;
+        }
     }
-
+    
+    private CinemachineFreeLook GetActiveCamera()
+    {
+        if (sprintCamera.Priority > 0) return sprintCamera;
+        if (combatCamera.Priority > 0) return combatCamera;
+        return normalCamera;
+    }
+    
     private void ConfigureCameraInput(CinemachineFreeLook camera)
     {
         // Reset initial values
@@ -159,5 +177,35 @@ public class CameraController : MonoBehaviour
         camera.m_XAxis.m_DecelTime = 0f;
         camera.m_YAxis.m_AccelTime = 0f;
         camera.m_YAxis.m_DecelTime = 0f;
+    }
+
+    private void SetupCamera()
+    {
+        if (cameraTarget == null)
+        {
+            GameObject targetObj = new GameObject("CameraTarget");
+            cameraTarget = targetObj.transform;
+            cameraTarget.parent = transform;
+            cameraTarget.localPosition = new Vector3(0f, 1.5f, -3f); // Adjust Z for distance
+            cameraTarget.localRotation = Quaternion.identity;
+        }
+    }
+
+    public void SetCameraTarget(Transform target)
+    {
+        cameraTarget = target;
+        if (normalCamera != null) 
+        {
+            normalCamera.Follow = normalCamera.LookAt = target;
+        }
+        if (combatCamera != null)
+        {
+            combatCamera.Follow = combatCamera.LookAt = target;
+        }
+        if (sprintCamera != null)
+        {
+            sprintCamera.Follow = sprintCamera.LookAt = target;
+        }
+        Debug.Log($"CameraController: Camera target set to {target.name}");
     }
 } 

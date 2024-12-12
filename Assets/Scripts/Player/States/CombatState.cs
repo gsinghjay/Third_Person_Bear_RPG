@@ -18,34 +18,19 @@ namespace Player.States
             attackTimer = 0f;
         }
 
-        public override void Exit()
-        {
-        }
-
-        public override void Update()
-        {
-            if (attackTimer > 0)
-            {
-                attackTimer -= Time.deltaTime;
-            }
-            
-            // Check for state transitions
-            CheckStateTransitions();
-        }
-
         private void CheckStateTransitions()
         {
-            // If we're not attacking or defending, allow state changes
             if (attackTimer <= 0 && !playerInput.IsAttacking)
             {
-                if (playerInput.IsSprinting && playerInput.MovementInput.magnitude > 0.1f)
-                {
+                string nextState = playerInput.IsSprinting && playerInput.MovementInput.magnitude > 0.1f 
+                    ? "SprintState" 
+                    : "IdleState";
+                Debug.Log($"CombatState: Transitioning to {nextState}");
+                
+                if (nextState == "SprintState")
                     playerController.ChangeState(new SprintState(playerController));
-                }
-                else if (!playerInput.IsDefending)
-                {
+                else
                     playerController.ChangeState(new IdleState(playerController));
-                }
             }
         }
 
@@ -54,14 +39,14 @@ namespace Player.States
             if (input.magnitude >= 0.1f)
             {
                 Vector3 moveDirection = playerController.CalculateMoveDirection(input);
-                float currentSpeed = playerController.MoveSpeed * 0.7f; // Slower movement in combat
+                float currentSpeed = playerController.MoveSpeed * 0.7f;
 
                 playerController.RotateTowardsMoveDirection(moveDirection);
                 playerController.Move(moveDirection * currentSpeed);
             }
 
             ApplyGravity();
-            UpdateAnimations(input.magnitude >= 0.1f);
+            UpdateAnimations(input.magnitude >= 0.1f, input);
         }
 
         public override void HandleCombat()
@@ -70,14 +55,15 @@ namespace Player.States
             {
                 if (playerInput.IsAttacking)
                 {
-                    Debug.Log("Combat State: Attack input detected");
+                    Debug.Log($"CombatState: Starting attack with duration {playerController.AttackDuration}");
                     combatHandler.PerformAttack();
+                    animationController.PlayAttack();
                     attackTimer = playerController.AttackDuration;
                 }
             }
             else
             {
-                Debug.Log($"Combat State: Attack on cooldown: {attackTimer}");
+                Debug.Log($"CombatState: Attack cooldown remaining: {attackTimer:F2}s");
             }
         }
 
@@ -87,6 +73,16 @@ namespace Player.States
             {
                 playerController.VerticalVelocity = playerController.JumpForce * 0.8f; // Reduced jump height in combat
             }
+        }
+
+        public override void Update()
+        {
+            if (attackTimer > 0)
+            {
+                attackTimer -= Time.deltaTime;
+            }
+            
+            CheckStateTransitions();
         }
     }
 } 

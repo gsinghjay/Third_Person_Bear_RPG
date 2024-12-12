@@ -34,7 +34,7 @@ namespace Player.States
             }
 
             ApplyGravity();
-            UpdateAnimations(true);
+            UpdateAnimations(true, input);
         }
 
         public override void HandleCombat()
