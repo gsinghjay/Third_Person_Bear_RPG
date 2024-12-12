@@ -173,9 +173,25 @@ namespace Player.Core
                 
                 float centerX = terrainPosition.x + (terrainSize.x * 0.5f);
                 float centerZ = terrainPosition.z + (terrainSize.z * 0.5f);
-                float height = terrain.SampleHeight(new Vector3(centerX, 0, centerZ)) + 1f;
                 
-                transform.position = new Vector3(centerX, height, centerZ);
+                // Sample terrain height at the center position
+                float terrainHeight = terrain.SampleHeight(new Vector3(centerX, 0, centerZ));
+                
+                // Add half the character controller height to place feet on ground
+                float characterHeight = CharacterController != null ? CharacterController.height * 0.5f : 1f;
+                float finalHeight = terrainHeight + characterHeight;
+                
+                transform.position = new Vector3(centerX, finalHeight, centerZ);
+                
+                // Ensure we're grounded by doing a small downward move
+                CharacterController.Move(Vector3.down * 0.1f);
+                
+                Debug.Log($"Positioned player at: {transform.position}, Terrain height: {terrainHeight}, Character height offset: {characterHeight}");
+            }
+            else
+            {
+                Debug.LogWarning("No terrain found in scene. Positioning player at origin.");
+                transform.position = new Vector3(0f, 1f, 0f);
             }
         }
 
