@@ -7,6 +7,7 @@ public class WeaponProjectile : MonoBehaviour
 {
     [SerializeField] private float lifetime = 5f;
     [SerializeField] private ParticleSystem hitEffect;
+    [SerializeField] private MeshRenderer meshRenderer;
     [SerializeField] private float hitRadius = 1f;
     
     private DamageType damageType;
@@ -26,6 +27,11 @@ public class WeaponProjectile : MonoBehaviour
     {
         enemyLayer = 1 << LayerMask.NameToLayer("Enemy");
         Debug.Log($"WeaponProjectile: Enemy layer initialized: {enemyLayer}");
+        
+        if (meshRenderer != null)
+        {
+            meshRenderer.enabled = false;
+        }
     }
 
     public void Initialize(DamageType type, float dmg, Vector3 vel)
@@ -35,9 +41,14 @@ public class WeaponProjectile : MonoBehaviour
         velocity = vel;
         Debug.Log($"WeaponProjectile: Initialized with damage: {damage}, type: {damageType}");
         
-        if (TryGetComponent<Renderer>(out var renderer))
+        if (meshRenderer != null)
         {
-            renderer.material.color = damageTypeColors[type];
+            meshRenderer.enabled = true;
+        }
+        
+        if (meshRenderer != null && meshRenderer.material != null)
+        {
+            meshRenderer.material.color = damageTypeColors[type];
         }
         
         Destroy(gameObject, lifetime);
