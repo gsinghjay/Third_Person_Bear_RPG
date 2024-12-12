@@ -77,10 +77,37 @@ namespace Enemies.Core
 
         protected virtual void Die()
         {
-            Animator.SetTrigger("Death");
+            Debug.Log($"Bear dying: {gameObject.name}");
             
+            // Stop all coroutines first
+            StopAllCoroutines();
+            
+            // Disable state updates
+            currentState?.Exit();
+            currentState = null;
+            
+            // Safely disable NavMeshAgent
             if (Agent != null)
+            {
+                if (Agent.isOnNavMesh)
+                {
+                    Agent.isStopped = true;
+                    Agent.ResetPath();
+                }
                 Agent.enabled = false;
+            }
+            
+            // Play death animation
+            if (Animator != null)
+            {
+                Animator.SetTrigger("Death");
+            }
+            
+            // Disable collider
+            if (Collider != null)
+            {
+                Collider.enabled = false;
+            }
             
             Destroy(gameObject, 2f);
         }

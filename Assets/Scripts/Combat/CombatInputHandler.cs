@@ -9,8 +9,13 @@ public class CombatInputHandler : MonoBehaviour
     [SerializeField] private WeaponController weaponController;
     private PlayerInput playerInput;
     private PlayerController playerController;
-    private bool canAttack = true;
-    [SerializeField] private float attackCooldown = 0.5f;
+    
+    [Header("Cooldown Settings")]
+    [SerializeField] private float basicAttackCooldown = 0.5f;
+    [SerializeField] private float specialAttackCooldown = 1.5f;
+    
+    private bool canBasicAttack = true;
+    private bool canSpecialAttack = true;
     
     private void Awake()
     {
@@ -25,33 +30,49 @@ public class CombatInputHandler : MonoBehaviour
     
     private void Update()
     {
-        // Handle element switching
-        if (Input.GetKeyDown(KeyCode.Alpha1))
-        {
-            weaponController.SetDamageType(DamageType.Physical);
-        }
-        else if (Input.GetKeyDown(KeyCode.Alpha2))
-        {
-            weaponController.SetDamageType(DamageType.Fire);
-        }
-        else if (Input.GetKeyDown(KeyCode.Alpha3))
-        {
-            weaponController.SetDamageType(DamageType.Ice);
-        }
+        HandleElementSwitching();
+        HandleAttackInput();
+    }
 
-        // Handle attack input
-        if (canAttack && (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1)))
+    private void HandleElementSwitching()
+    {
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+            weaponController.SetDamageType(DamageType.Physical);
+        else if (Input.GetKeyDown(KeyCode.Alpha2))
+            weaponController.SetDamageType(DamageType.Fire);
+        else if (Input.GetKeyDown(KeyCode.Alpha3))
+            weaponController.SetDamageType(DamageType.Ice);
+    }
+
+    private void HandleAttackInput()
+    {
+        if (canBasicAttack && Input.GetMouseButtonDown(0))
         {
             PerformAttack();
-            StartCoroutine(AttackCooldown());
+            StartCoroutine(AttackCooldown(true));
+        }
+        
+        if (canSpecialAttack && Input.GetMouseButtonDown(1))
+        {
+            PerformSpecialAttack();
+            StartCoroutine(AttackCooldown(false));
         }
     }
 
-    private IEnumerator AttackCooldown()
+    private IEnumerator AttackCooldown(bool isBasicAttack)
     {
-        canAttack = false;
-        yield return new WaitForSeconds(attackCooldown);
-        canAttack = true;
+        if (isBasicAttack)
+        {
+            canBasicAttack = false;
+            yield return new WaitForSeconds(basicAttackCooldown);
+            canBasicAttack = true;
+        }
+        else
+        {
+            canSpecialAttack = false;
+            yield return new WaitForSeconds(specialAttackCooldown);
+            canSpecialAttack = true;
+        }
     }
 
     public void PerformAttack()
@@ -64,6 +85,14 @@ public class CombatInputHandler : MonoBehaviour
         else
         {
             Debug.LogError("WeaponController is null in CombatInputHandler!");
+        }
+    }
+
+    private void PerformSpecialAttack()
+    {
+        if (weaponController != null)
+        {
+            weaponController.PerformSpecialAttack();
         }
     }
 

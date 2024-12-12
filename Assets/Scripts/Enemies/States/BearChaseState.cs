@@ -17,13 +17,20 @@ namespace Enemies.States
         {
             base.Enter();
             animator.SetBool("Run Forward", true);
-            agent.isStopped = false;
+            
+            if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
+            {
+                agent.isStopped = false;
+            }
         }
 
         public override void Exit()
         {
             base.Exit();
-            agent.isStopped = true;
+            if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
+            {
+                agent.isStopped = true;
+            }
         }
 
         public override void Update()
@@ -35,7 +42,10 @@ namespace Enemies.States
 
         public override void HandleMovement()
         {
-            if (bearController.PlayerTransform == null) return;
+            if (bearController.PlayerTransform == null || 
+                agent == null || 
+                !agent.isActiveAndEnabled || 
+                !agent.isOnNavMesh) return;
 
             targetPosition = bearController.PlayerTransform.position;
             agent.SetDestination(targetPosition);
@@ -53,6 +63,8 @@ namespace Enemies.States
 
         private void CheckForAttackRange()
         {
+            if (bearController.PlayerTransform == null) return;
+
             float distanceToPlayer = Vector3.Distance(
                 bearController.transform.position, 
                 targetPosition
