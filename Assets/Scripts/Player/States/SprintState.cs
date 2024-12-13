@@ -43,14 +43,18 @@ namespace Player.States
 
         public override void HandleCombat()
         {
-            if (animationController.IsJumping()) return;
-
-            if (playerInput.IsAttacking)
+            // Don't allow attacks while jumping
+            if (animationController.IsJumping())
             {
-                Debug.Log("SprintState: Transitioning to CombatState due to attack");
-                playerController.ChangeState(new CombatState(playerController));
+                return;
+            }
+
+            if (playerInput.IsAttacking || playerInput.IsSpecialAttacking)
+            {
+                var combatState = new CombatState(playerController);
+                playerController.ChangeState(combatState);
                 
-                // Important: Forward the attack input to the new state
+                // Forward the combat input to the new state
                 playerController.CurrentState.HandleCombat();
             }
         }

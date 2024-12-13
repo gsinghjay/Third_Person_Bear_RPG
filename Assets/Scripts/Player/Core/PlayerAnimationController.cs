@@ -21,12 +21,10 @@ namespace Player.Core
         
         [Header("Combat Animations")]
         [SerializeField] private ClipTransition _attackAnimation;
+        [SerializeField] private ClipTransition _specialAttackAnimation;
         
         [Header("Blend Settings")]
         [SerializeField] private float _transitionDuration = 0.25f;
-        
-        [Header("Combat Settings")]
-        [SerializeField] private float _attackAnimationSpeed = 0.5f;
         
         private bool _isJumping;
 
@@ -60,6 +58,19 @@ namespace Player.Core
                 Debug.LogError("Attack animation not assigned!");
             }
 
+            if (_specialAttackAnimation != null)
+            {
+                _specialAttackAnimation.Events.OnEnd = () =>
+                {
+                    PlayIdle();
+                    Debug.Log("Special attack animation completed");
+                };
+            }
+            else
+            {
+                Debug.LogWarning("Special attack animation not assigned in PlayerAnimationController");
+            }
+
             if (_jumpAnimation != null)
             {
                 _jumpAnimation.Events.OnEnd = () =>
@@ -86,9 +97,41 @@ namespace Player.Core
             }
         }
 
+        public void PlaySpecialAttack()
+        {
+            if (_specialAttackAnimation == null)
+            {
+                Debug.LogError("PlayerAnimationController: Special attack animation not assigned!");
+                return;
+            }
+
+            Debug.Log("PlayerAnimationController: Attempting to play special attack animation");
+            
+            try
+            {
+                // Stop current animation
+                _animancer.Stop();
+                
+                // Play the special attack animation
+                var state = _animancer.Play(_specialAttackAnimation, _transitionDuration);
+                if (state != null)
+                {
+                    state.Time = 0;
+                    Debug.Log($"PlayerAnimationController: Special attack animation playing");
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"PlayerAnimationController: Failed to play special attack animation: {e.Message}");
+            }
+        }
+
         public void PlayIdle()
         {
-            _animancer.Play(_idleAnimation, _transitionDuration);
+            if (_idleAnimation != null)
+            {
+                _animancer.Play(_idleAnimation, _transitionDuration);
+            }
         }
 
         public void PlayWalk()

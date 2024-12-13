@@ -55,28 +55,15 @@ namespace Player.States
 
             if (attackTimer <= 0)
             {
-                if (playerInput != null && playerInput.IsAttacking)
+                if (playerInput.IsAttacking)
                 {
-                    if (animationController != null)
-                    {
-                        Debug.Log("CombatState: Handling attack input");
-                        animationController.PlayAttack();
-                        attackTimer = playerController.AttackDuration;
-                        combatHandler?.PerformAttack();
-                    }
-                    else
-                    {
-                        Debug.LogError("CombatState: No animation controller available!");
-                    }
+                    combatHandler.PerformAttack();
+                    attackTimer = playerController.AttackDuration;
                 }
-            }
-
-            // Check for state transitions only if we're not in the middle of an attack
-            if (attackTimer <= 0)
-            {
-                if (!playerInput.IsAttacking)
+                else if (playerInput.IsSpecialAttacking)
                 {
-                    ReturnToPreviousState();
+                    combatHandler.PerformSpecialAttack();
+                    attackTimer = playerController.AttackDuration;
                 }
             }
         }
@@ -93,7 +80,7 @@ namespace Player.States
             // Check for state transitions only if we're not in the middle of an attack
             if (attackTimer <= 0)
             {
-                if (!playerInput.IsAttacking)
+                if (!playerInput.IsAttacking && !playerInput.IsSpecialAttacking)
                 {
                     ReturnToPreviousState();
                 }

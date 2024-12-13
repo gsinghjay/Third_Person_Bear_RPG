@@ -60,7 +60,8 @@ public class CombatInputHandler : MonoBehaviour
             StartCoroutine(AttackCooldown(true));
         }
         
-        if (canSpecialAttack && Input.GetMouseButtonDown(1))
+        // Add special attack input check
+        if (canSpecialAttack && Input.GetMouseButtonDown(1))  // Right click
         {
             PerformSpecialAttack();
             StartCoroutine(AttackCooldown(false));
@@ -103,11 +104,27 @@ public class CombatInputHandler : MonoBehaviour
         }
     }
 
-    private void PerformSpecialAttack()
+    public void PerformSpecialAttack()
     {
+        Debug.Log("CombatInputHandler: Starting special attack");
+        
         if (weaponController != null)
         {
+            if (animationController != null)
+            {
+                Debug.Log("CombatInputHandler: Playing special attack animation");
+                animationController.PlaySpecialAttack();
+            }
+            else
+            {
+                Debug.LogError("CombatInputHandler: Animation controller is null!");
+            }
+            
             weaponController.PerformSpecialAttack();
+        }
+        else
+        {
+            Debug.LogError("CombatInputHandler: Weapon controller is null!");
         }
     }
 
