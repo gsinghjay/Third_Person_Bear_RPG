@@ -32,6 +32,7 @@ namespace Player.Core
         public PlayerAnimationController AnimationController { get; private set; }
         public CharacterController CharacterController { get; private set; }
         public IPlayerInput PlayerInput { get; private set; }
+        public IPlayerState CurrentState { get; private set; }
 
         private IPlayerState currentState;
         private Transform cameraTransform;
@@ -78,9 +79,18 @@ namespace Player.Core
 
         public void ChangeState(IPlayerState newState)
         {
-            currentState?.Exit();
+            if (newState == null)
+            {
+                Debug.LogError("PlayerController: Attempted to change to null state!");
+                return;
+            }
+
+            CurrentState?.Exit();
             currentState = newState;
-            currentState?.Enter();
+            CurrentState = newState;  // Make sure both references are updated
+            CurrentState.Enter();
+            
+            Debug.Log($"PlayerController: State changed to {newState.GetType().Name}");
         }
 
         private void HandleInput()
@@ -118,8 +128,7 @@ namespace Player.Core
             // Handle horizontal movement
             if (moveDirection.magnitude >= 0.1f)
             {
-                float currentSpeed = speedMultiplier;
-                movement = moveDirection * currentSpeed;
+                movement = moveDirection * (moveSpeed * speedMultiplier);
             }
             
             // Apply gravity/vertical movement

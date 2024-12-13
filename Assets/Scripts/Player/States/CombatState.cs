@@ -1,5 +1,6 @@
 using UnityEngine;
 using Player.Core;
+using System.Collections;
 
 namespace Player.States
 {
@@ -15,34 +16,29 @@ namespace Player.States
 
         public override void Enter()
         {
-            attackTimer = 0f;
-        }
-
-        private void CheckStateTransitions()
-        {
-            if (attackTimer <= 0 && !playerInput.IsAttacking)
+            base.Enter();
+            
+            if (combatHandler == null)
             {
-                string nextState = playerInput.IsSprinting && playerInput.MovementInput.magnitude > 0.1f 
-                    ? "SprintState" 
-                    : "IdleState";
-                Debug.Log($"CombatState: Transitioning to {nextState}");
-                
-                if (nextState == "SprintState")
-                    playerController.ChangeState(new SprintState(playerController));
-                else
-                    playerController.ChangeState(new IdleState(playerController));
+                combatHandler = playerController?.GetComponent<CombatInputHandler>();
+                if (combatHandler == null)
+                {
+                    Debug.LogError("CombatState: No CombatInputHandler found!");
+                }
             }
+            
+            attackTimer = 0f;
+            Debug.Log("CombatState: Entered");
         }
 
         public override void HandleMovement(Vector2 input)
         {
+            // Allow movement during combat, just slower
             if (input.magnitude >= 0.1f)
             {
                 Vector3 moveDirection = playerController.CalculateMoveDirection(input);
-                float currentSpeed = playerController.MoveSpeed * 0.7f;
-
                 playerController.RotateTowardsMoveDirection(moveDirection);
-                playerController.Move(moveDirection * currentSpeed);
+                playerController.Move(moveDirection, 0.7f); // 70% of normal speed
             }
 
             ApplyGravity();
@@ -53,17 +49,20 @@ namespace Player.States
         {
             if (attackTimer <= 0)
             {
-                if (playerInput.IsAttacking)
+                if (playerInput != null && playerInput.IsAttacking)
                 {
-                    Debug.Log($"CombatState: Starting attack with duration {playerController.AttackDuration}");
-                    combatHandler.PerformAttack();
-                    animationController.PlayAttack();
-                    attackTimer = playerController.AttackDuration;
+                    if (animationController != null)
+                    {
+                        Debug.Log("CombatState: Handling attack input");
+                        animationController.PlayAttack();
+                        attackTimer = playerController.AttackDuration;
+                        combatHandler?.PerformAttack();
+                    }
+                    else
+                    {
+                        Debug.LogError("CombatState: No animation controller available!");
+                    }
                 }
-            }
-            else
-            {
-                Debug.Log($"CombatState: Attack cooldown remaining: {attackTimer:F2}s");
             }
         }
 
@@ -71,18 +70,44 @@ namespace Player.States
         {
             if (characterController.isGrounded && playerInput.IsJumping)
             {
-                playerController.VerticalVelocity = playerController.JumpForce * 0.8f; // Reduced jump height in combat
+                playerController.VerticalVelocity = playerController.JumpForce * 0.8f;
+                animationController.StartJump();
             }
+            
+            ApplyGravity();
+            HandleJumpAnimation(characterController.isGrounded, playerController.VerticalVelocity);
         }
 
         public override void Update()
         {
+            base.Update();
+            
             if (attackTimer > 0)
             {
                 attackTimer -= Time.deltaTime;
             }
             
-            CheckStateTransitions();
+            // Check for state transitions only if we're not in the middle of an attack
+            if (attackTimer <= 0)
+            {
+                if (!playerInput.IsAttacking && !playerInput.IsDefending)
+                {
+                    ReturnToPreviousState();
+                }
+            }
+        }
+
+        private void ReturnToPreviousState()
+        {
+            // Return to appropriate state based on current input
+            if (playerInput.IsSprinting && playerInput.MovementInput.magnitude > 0.1f)
+            {
+                playerController.ChangeState(new SprintState(playerController));
+            }
+            else
+            {
+                playerController.ChangeState(new IdleState(playerController));
+            }
         }
     }
 } 

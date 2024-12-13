@@ -43,7 +43,15 @@ namespace Player.States
 
         public override void HandleCombat()
         {
-            if (playerInput.IsAttacking || playerInput.IsDefending)
+            if (playerInput.IsAttacking)
+            {
+                Debug.Log("SprintState: Transitioning to CombatState due to attack");
+                playerController.ChangeState(new CombatState(playerController));
+                
+                // Important: Forward the attack input to the new state
+                playerController.CurrentState.HandleCombat();
+            }
+            else if (playerInput.IsDefending)
             {
                 playerController.ChangeState(new CombatState(playerController));
             }

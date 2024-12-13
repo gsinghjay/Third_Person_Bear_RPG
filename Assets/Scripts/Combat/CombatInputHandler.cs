@@ -9,6 +9,7 @@ public class CombatInputHandler : MonoBehaviour
     [SerializeField] private WeaponController weaponController;
     private PlayerInput playerInput;
     private PlayerController playerController;
+    private PlayerAnimationController animationController;
     
     [Header("Cooldown Settings")]
     [SerializeField] private float basicAttackCooldown = 0.5f;
@@ -21,6 +22,7 @@ public class CombatInputHandler : MonoBehaviour
     {
         playerInput = GetComponent<PlayerInput>();
         playerController = GetComponent<PlayerController>();
+        animationController = GetComponentInChildren<PlayerAnimationController>();
 
         if (weaponController == null)
         {
@@ -78,6 +80,13 @@ public class CombatInputHandler : MonoBehaviour
     public void PerformAttack()
     {
         Debug.Log("CombatInputHandler: PerformAttack called");
+        
+        if (animationController != null)
+        {
+            Debug.Log("CombatInputHandler: Playing attack animation");
+            animationController.PlayAttack();
+        }
+        
         if (weaponController != null)
         {
             weaponController.Attack();

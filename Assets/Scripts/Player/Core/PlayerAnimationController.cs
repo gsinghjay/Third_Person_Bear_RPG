@@ -1,5 +1,6 @@
 using UnityEngine;
 using Animancer;
+using System.Collections;
 
 namespace Player.Core
 {
@@ -25,17 +26,13 @@ namespace Player.Core
         [Header("Blend Settings")]
         [SerializeField] private float _transitionDuration = 0.25f;
         
-        private CharacterController characterController;
+        [Header("Combat Settings")]
+        [SerializeField] private float _attackAnimationSpeed = 0.5f;
+        
         private bool _isJumping;
 
         private void Awake()
         {
-            characterController = GetComponentInParent<CharacterController>();
-            if (characterController == null)
-            {
-                Debug.LogError("PlayerAnimationController: No CharacterController found in parent!");
-            }
-
             if (_animancer == null)
             {
                 _animancer = GetComponent<AnimancerComponent>();
@@ -53,7 +50,15 @@ namespace Player.Core
         {
             if (_attackAnimation != null)
             {
-                _attackAnimation.Events.OnEnd = PlayIdle;
+                _attackAnimation.Events.OnEnd = () =>
+                {
+                    PlayIdle();
+                    Debug.Log("Attack animation completed");
+                };
+            }
+            else
+            {
+                Debug.LogError("Attack animation not assigned!");
             }
 
             if (_jumpAnimation != null)
@@ -62,8 +67,23 @@ namespace Player.Core
                 {
                     _isJumping = false;
                     PlayIdle();
-                    Debug.Log("Jump animation completed");
                 };
+            }
+        }
+
+        public void PlayAttack()
+        {
+            if (_attackAnimation == null)
+            {
+                Debug.LogError("PlayerAnimationController: Attack animation not assigned!");
+                return;
+            }
+
+            var state = _animancer.Play(_attackAnimation, _transitionDuration);
+            if (state != null)
+            {
+                state.Time = 0;
+                // Don't set speed for Animancer Lite
             }
         }
 
@@ -82,11 +102,6 @@ namespace Player.Core
             _animancer.Play(_sprintAnimation, _transitionDuration);
         }
 
-        public void PlayAttack()
-        {
-            _animancer.Play(_attackAnimation);
-        }
-
         public void PlayDefend()
         {
             _animancer.Play(_defendAnimation, _transitionDuration);
@@ -98,7 +113,6 @@ namespace Player.Core
             {
                 _isJumping = true;
                 _animancer.Play(_jumpAnimation, _transitionDuration);
-                Debug.Log("Playing jump animation");
             }
         }
 
@@ -106,9 +120,18 @@ namespace Player.Core
         {
             if (_animancer == null) return;
 
-            if (_isJumping) return; // Don't update movement animations while jumping
+            // Don't interrupt attack animation
+            if (_attackAnimation != null && 
+                _animancer.States.Current != null && 
+                _animancer.States.Current.Clip == _attackAnimation.Clip)
+            {
+                return;
+            }
 
-            if (speedValue <= 0)
+            // Don't update movement animations while jumping
+            if (_isJumping) return;
+
+            if (speedValue <= 0.1f)
             {
                 PlayIdle();
                 return;
@@ -138,12 +161,7 @@ namespace Player.Core
 
             if (animationToPlay != null)
             {
-                var animState = _animancer.Play(animationToPlay, _transitionDuration);
-                if (animState != null)
-                {
-                    float speedScale = Mathf.Max(0.5f, speedValue);
-                    animState.Speed = speedScale;
-                }
+                _animancer.Play(animationToPlay, _transitionDuration);
             }
         }
 
