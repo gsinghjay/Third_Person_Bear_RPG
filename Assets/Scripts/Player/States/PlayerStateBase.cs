@@ -96,21 +96,20 @@ namespace Player.States
         {
             if (animationController == null) return;
 
-            float speedValue = 0f;
-            
-            // Don't override animation speed if jumping
+            // Don't override animation if jumping
             if (animationController.IsJumping())
             {
                 return;
             }
 
-            // Otherwise calculate speed value based on state and movement
-            if (this is IdleState)
-                speedValue = isMoving ? 0.5f : 0f;
-            else if (this is SprintState)
+            // Use thresholds for different states instead of speed multipliers
+            float speedValue;
+            if (this is SprintState)
                 speedValue = 1f;
             else if (this is CombatState)
                 speedValue = isMoving ? 0.3f : 0f;
+            else // IdleState
+                speedValue = isMoving ? 0.5f : 0f;
             
             animationController.UpdateMovementAnimation(speedValue, movementInput);
         }

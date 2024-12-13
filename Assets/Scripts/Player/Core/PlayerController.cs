@@ -125,23 +125,27 @@ namespace Player.Core
         {
             Vector3 movement = Vector3.zero;
             
-            // Handle horizontal movement
+            // Handle horizontal movement with fixed speeds instead of multipliers
             if (moveDirection.magnitude >= 0.1f)
             {
-                movement.x = moveDirection.x * (moveSpeed * speedMultiplier);
-                movement.z = moveDirection.z * (moveSpeed * speedMultiplier);
+                float currentSpeed = moveSpeed;
+                if (speedMultiplier <= 0.7f) // Combat speed
+                    currentSpeed = moveSpeed * 0.7f;
+                else if (speedMultiplier > 1f) // Sprint speed
+                    currentSpeed = sprintSpeed;
+
+                movement.x = moveDirection.x * currentSpeed;
+                movement.z = moveDirection.z * currentSpeed;
             }
             
-            // Always apply vertical movement, even if there's no horizontal movement
+            // Always apply vertical movement
             movement.y = VerticalVelocity;
             
-            // Debug log when jumping
             if (movement.y > 0)
             {
                 Debug.Log($"Move - Final movement vector: {movement}, VerticalVelocity: {VerticalVelocity}");
             }
             
-            // Apply final movement
             CharacterController.Move(movement * Time.deltaTime);
         }
 

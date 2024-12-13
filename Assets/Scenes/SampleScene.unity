@@ -2834,7 +2834,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   moveSpeed: 2.5
-  sprintSpeed: 4
+  sprintSpeed: 8
   rotationSpeed: 5
   jumpForce: 14
   attackDuration: 0.5

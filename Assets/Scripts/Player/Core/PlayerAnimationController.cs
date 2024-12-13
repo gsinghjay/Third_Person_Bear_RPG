@@ -131,7 +131,6 @@ namespace Player.Core
             // Allow movement updates during jump
             if (_isJumping)
             {
-                // Only update horizontal movement animations
                 if (speedValue > 0.1f)
                 {
                     _animancer.Play(_walkForwardAnimation, _transitionDuration);
@@ -139,9 +138,10 @@ namespace Player.Core
                 return;
             }
 
+            // Instead of scaling animation speed, use different animations
             if (speedValue <= 0.1f)
             {
-                PlayIdle();
+                _animancer.Play(_idleAnimation, _transitionDuration);
                 return;
             }
 
@@ -150,6 +150,7 @@ namespace Player.Core
 
             ClipTransition animationToPlay;
 
+            // Use distinct animations instead of speed scaling
             if (speedValue > 0.8f)
             {
                 animationToPlay = _sprintAnimation;
@@ -169,12 +170,7 @@ namespace Player.Core
 
             if (animationToPlay != null)
             {
-                var animState = _animancer.Play(animationToPlay, _transitionDuration);
-                if (animState != null)
-                {
-                    float speedScale = Mathf.Max(0.5f, speedValue);
-                    animState.Speed = speedScale;
-                }
+                _animancer.Play(animationToPlay, _transitionDuration);
             }
         }
 
