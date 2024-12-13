@@ -1041,7 +1041,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 145217159}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.018189343, y: 0.000000040249443, z: -0.000000032319004, w: 0.9998346}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -2435,7 +2435,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 581598888}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.1470698, y: 0.000000029067614, z: -0.00000001628794, w: 0.98912615}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -3199,7 +3199,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 897559029}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.018141616, y: 0.000000041396863, z: -0.000000030835615, w: 0.99983543}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -5589,15 +5589,6 @@ MonoBehaviour:
       _Callbacks: []
       _Names: []
     _Clip: {fileID: 1827226128182048838, guid: db509ad77f9b4f84a8eb1989f589b24c, type: 3}
-    _NormalizedStartTime: NaN
-  _defendAnimation:
-    _FadeDuration: 0.25
-    _Speed: 1
-    _Events:
-      _NormalizedTimes: []
-      _Callbacks: []
-      _Names: []
-    _Clip: {fileID: 1827226128182048838, guid: 61f2c64d4f97d9f459a1d367eb16fb13, type: 3}
     _NormalizedStartTime: NaN
   _transitionDuration: 0.25
   _attackAnimationSpeed: 0.5

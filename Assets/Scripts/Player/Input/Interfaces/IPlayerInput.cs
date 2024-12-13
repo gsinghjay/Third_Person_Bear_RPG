@@ -9,6 +9,5 @@ namespace Player.Input.Interfaces
         bool IsJumping { get; }
         bool IsSprinting { get; }
         bool IsAttacking { get; }
-        bool IsDefending { get; }
     }
 } 

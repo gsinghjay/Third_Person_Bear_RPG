@@ -53,10 +53,6 @@ namespace Player.States
                 // Important: Forward the attack input to the new state
                 playerController.CurrentState.HandleCombat();
             }
-            else if (playerInput.IsDefending)
-            {
-                playerController.ChangeState(new CombatState(playerController));
-            }
         }
 
         public override void Exit()

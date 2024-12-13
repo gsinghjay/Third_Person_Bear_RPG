@@ -45,21 +45,7 @@ namespace Player.States
 
         public override void HandleCombat()
         {
-            if (playerInput == null || playerController == null || animationController.IsJumping()) return;
-
             if (playerInput.IsAttacking)
-            {
-                Debug.Log("IdleState: Transitioning to CombatState due to attack");
-                var newState = new CombatState(playerController);
-                playerController.ChangeState(newState);
-                
-                // Only forward the combat input if the state change was successful
-                if (playerController.CurrentState == newState)
-                {
-                    playerController.CurrentState.HandleCombat();
-                }
-            }
-            else if (playerInput.IsDefending)
             {
                 playerController.ChangeState(new CombatState(playerController));
             }

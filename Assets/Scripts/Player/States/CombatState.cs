@@ -70,6 +70,15 @@ namespace Player.States
                     }
                 }
             }
+
+            // Check for state transitions only if we're not in the middle of an attack
+            if (attackTimer <= 0)
+            {
+                if (!playerInput.IsAttacking)
+                {
+                    ReturnToPreviousState();
+                }
+            }
         }
 
         public override void Update()
@@ -84,7 +93,7 @@ namespace Player.States
             // Check for state transitions only if we're not in the middle of an attack
             if (attackTimer <= 0)
             {
-                if (!playerInput.IsAttacking && !playerInput.IsDefending)
+                if (!playerInput.IsAttacking)
                 {
                     ReturnToPreviousState();
                 }

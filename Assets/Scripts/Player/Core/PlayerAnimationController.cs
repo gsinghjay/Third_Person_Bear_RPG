@@ -21,7 +21,6 @@ namespace Player.Core
         
         [Header("Combat Animations")]
         [SerializeField] private ClipTransition _attackAnimation;
-        [SerializeField] private ClipTransition _defendAnimation;
         
         [Header("Blend Settings")]
         [SerializeField] private float _transitionDuration = 0.25f;
@@ -100,11 +99,6 @@ namespace Player.Core
         public void PlaySprint()
         {
             _animancer.Play(_sprintAnimation, _transitionDuration);
-        }
-
-        public void PlayDefend()
-        {
-            _animancer.Play(_defendAnimation, _transitionDuration);
         }
 
         public void StartJump()
