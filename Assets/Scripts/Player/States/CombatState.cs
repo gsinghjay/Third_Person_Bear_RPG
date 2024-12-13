@@ -1,5 +1,6 @@
 using UnityEngine;
 using Player.Core;
+using Combat;
 using System.Collections;
 
 namespace Player.States
