@@ -52,14 +52,12 @@ namespace Player.States
         {
             if (characterController.isGrounded && playerController.VerticalVelocity <= 0)
             {
-                playerController.VerticalVelocity = -0.5f; // Small downward force when grounded
+                playerController.VerticalVelocity = -0.5f;
             }
             else
             {
-                // Apply gravity
                 playerController.VerticalVelocity += Physics.gravity.y * Time.deltaTime;
                 
-                // Terminal velocity
                 if (playerController.VerticalVelocity < -20f)
                     playerController.VerticalVelocity = -20f;
             }
@@ -83,7 +81,6 @@ namespace Player.States
             else if (this is CombatState)
                 speedValue = isMoving ? 0.3f : 0f;
             
-            Debug.Log($"{currentState}: Updating animation speed to {speedValue:F2}");
             animationController.UpdateMovementAnimation(speedValue, movementInput);
         }
 
@@ -91,28 +88,10 @@ namespace Player.States
         {
             if (animationController == null) return;
 
-            // Start jump
-            if (!isGrounded && verticalVelocity > 0 && !animationController.IsPlayingJumpAnimation())
+            if (!isGrounded && verticalVelocity > 0 && !animationController.IsJumping())
             {
                 animationController.StartJump();
-            }
-            // Landing
-            else if (isGrounded && animationController.IsPlayingJumpAnimation())
-            {
-                animationController.EndJump();
-            }
-            // Falling
-            else if (!isGrounded && verticalVelocity < 0)
-            {
-                if (!animationController.IsPlayingJumpAnimation())
-                {
-                    animationController.StartJump();
-                }
-                // Make sure we're in the jump loop animation while falling
-                else if (!animationController.IsInJumpLoop())
-                {
-                    animationController.PlayJumpLoop();
-                }
+                Debug.Log($"Starting jump animation. Vertical Velocity: {verticalVelocity}");
             }
         }
     }

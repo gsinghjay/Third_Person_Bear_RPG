@@ -5,11 +5,21 @@ namespace Player.States
 {
     public class IdleState : PlayerStateBase
     {
+        private bool wasInAir = false;
+
         public IdleState(PlayerController controller) : base(controller) { }
 
         public override void Enter()
         {
-            // No need to set animation parameters here
+            base.Enter();
+            wasInAir = !characterController.isGrounded;
+            Debug.Log("IdleState: Entered");
+        }
+
+        public override void Update()
+        {
+            base.Update();
+            wasInAir = !characterController.isGrounded;
         }
 
         public override void HandleMovement(Vector2 input)
@@ -43,17 +53,21 @@ namespace Player.States
 
         public override void HandleJump()
         {
-            if (characterController.isGrounded)
+            if (characterController.isGrounded && playerInput.IsJumping && !animationController.IsJumping())
             {
-                if (playerInput.IsJumping)
-                {
-                    playerController.VerticalVelocity = playerController.JumpForce;
-                    animationController.StartJump();
-                }
+                playerController.VerticalVelocity = playerController.JumpForce;
+                animationController.StartJump();
+                Debug.Log("IdleState: Starting new jump");
             }
             
             ApplyGravity();
             HandleJumpAnimation(characterController.isGrounded, playerController.VerticalVelocity);
+        }
+
+        public override void Exit()
+        {
+            base.Exit();
+            Debug.Log("IdleState: Exited");
         }
     }
 } 

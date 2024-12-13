@@ -5,16 +5,21 @@ namespace Player.States
 {
     public class SprintState : PlayerStateBase
     {
+        private bool wasInAir = false;
+
         public SprintState(PlayerController controller) : base(controller) { }
 
         public override void Enter()
         {
-            // No need to set animation parameters here
+            base.Enter();
+            wasInAir = !characterController.isGrounded;
+            Debug.Log("SprintState: Entered");
         }
 
-        public override void Exit()
+        public override void Update()
         {
-            // No need to set animation parameters here
+            base.Update();
+            wasInAir = !characterController.isGrounded;
         }
 
         public override void HandleMovement(Vector2 input)
@@ -22,10 +27,9 @@ namespace Player.States
             if (input.magnitude >= 0.1f && playerInput.IsSprinting)
             {
                 Vector3 moveDirection = playerController.CalculateMoveDirection(input);
-                float currentSpeed = playerController.SprintSpeed;
-
+                
                 playerController.RotateTowardsMoveDirection(moveDirection);
-                playerController.Move(moveDirection * currentSpeed);
+                playerController.Move(moveDirection, playerController.SprintSpeed);
             }
             else
             {
@@ -47,10 +51,21 @@ namespace Player.States
 
         public override void HandleJump()
         {
-            if (characterController.isGrounded && playerInput.IsJumping)
+            if (characterController.isGrounded && playerInput.IsJumping && !animationController.IsJumping())
             {
                 playerController.VerticalVelocity = playerController.JumpForce;
+                animationController.StartJump();
+                Debug.Log("SprintState: Starting new jump");
             }
+            
+            ApplyGravity();
+            HandleJumpAnimation(characterController.isGrounded, playerController.VerticalVelocity);
+        }
+
+        public override void Exit()
+        {
+            base.Exit();
+            Debug.Log("SprintState: Exited");
         }
     }
 } 

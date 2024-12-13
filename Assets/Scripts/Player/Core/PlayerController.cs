@@ -20,6 +20,8 @@ namespace Player.Core
         [SerializeField] private float minVerticalAngle = -30f;
         [SerializeField] private float maxVerticalAngle = 60f;
         [SerializeField] private Transform cameraTarget;
+        [SerializeField] private float cameraTargetHeight = 1.6f;
+        [SerializeField] private float cameraFollowSpeed = 10f;
 
         // Properties for states to access
         public float MoveSpeed => moveSpeed;
@@ -116,7 +118,8 @@ namespace Player.Core
             // Handle horizontal movement
             if (moveDirection.magnitude >= 0.1f)
             {
-                movement = moveDirection * (MoveSpeed * speedMultiplier);
+                float currentSpeed = speedMultiplier;
+                movement = moveDirection * currentSpeed;
             }
             
             // Apply gravity/vertical movement
@@ -133,7 +136,7 @@ namespace Player.Core
                 GameObject targetObj = new GameObject("CameraTarget");
                 cameraTarget = targetObj.transform;
                 cameraTarget.SetParent(transform);
-                cameraTarget.localPosition = new Vector3(0f, 1.5f, 0f);
+                cameraTarget.localPosition = new Vector3(0f, cameraTargetHeight, 0f);
                 cameraTarget.localRotation = Quaternion.identity;
             }
             
@@ -214,10 +217,25 @@ namespace Player.Core
 
         private void LateUpdate()
         {
+            UpdateCameraPosition();
+        }
+
+        private void UpdateCameraPosition()
+        {
             if (cameraTarget != null)
             {
-                Vector3 targetPosition = transform.position + new Vector3(0f, 1.5f, 0f);
-                cameraTarget.position = Vector3.Lerp(cameraTarget.position, targetPosition, Time.deltaTime * 10f);
+                // Calculate the desired position with offset
+                Vector3 targetPosition = transform.position + new Vector3(0f, cameraTargetHeight, 0f);
+                
+                // Use unscaled delta time for consistent camera following regardless of time scale
+                float deltaTime = Time.unscaledDeltaTime;
+                
+                // Smoothly move the camera target
+                cameraTarget.position = Vector3.Lerp(
+                    cameraTarget.position, 
+                    targetPosition, 
+                    deltaTime * cameraFollowSpeed
+                );
             }
         }
 
