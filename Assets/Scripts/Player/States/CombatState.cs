@@ -72,18 +72,6 @@ namespace Player.States
             }
         }
 
-        public override void HandleJump()
-        {
-            if (characterController.isGrounded && playerInput.IsJumping)
-            {
-                playerController.VerticalVelocity = playerController.JumpForce * 0.8f;
-                animationController.StartJump();
-            }
-            
-            ApplyGravity();
-            HandleJumpAnimation(characterController.isGrounded, playerController.VerticalVelocity);
-        }
-
         public override void Update()
         {
             base.Update();

@@ -67,15 +67,14 @@ namespace Player.States
 
         public override void HandleJump()
         {
-            if (characterController.isGrounded && playerInput.IsJumping && !animationController.IsJumping())
+            base.HandleJump();
+
+            if (!characterController.isGrounded)
             {
-                playerController.VerticalVelocity = playerController.JumpForce;
-                animationController.StartJump();
-                Debug.Log("IdleState: Starting new jump");
+                Vector3 moveDirection = Vector3.zero;
+                moveDirection.y = playerController.VerticalVelocity;
+                playerController.Move(moveDirection);
             }
-            
-            ApplyGravity();
-            HandleJumpAnimation(characterController.isGrounded, playerController.VerticalVelocity);
         }
 
         public override void Exit()

@@ -128,8 +128,16 @@ namespace Player.Core
                 return;
             }
 
-            // Don't update movement animations while jumping
-            if (_isJumping) return;
+            // Allow movement updates during jump
+            if (_isJumping)
+            {
+                // Only update horizontal movement animations
+                if (speedValue > 0.1f)
+                {
+                    _animancer.Play(_walkForwardAnimation, _transitionDuration);
+                }
+                return;
+            }
 
             if (speedValue <= 0.1f)
             {
@@ -161,7 +169,12 @@ namespace Player.Core
 
             if (animationToPlay != null)
             {
-                _animancer.Play(animationToPlay, _transitionDuration);
+                var animState = _animancer.Play(animationToPlay, _transitionDuration);
+                if (animState != null)
+                {
+                    float speedScale = Mathf.Max(0.5f, speedValue);
+                    animState.Speed = speedScale;
+                }
             }
         }
 

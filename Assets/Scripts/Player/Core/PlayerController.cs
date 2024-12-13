@@ -128,11 +128,18 @@ namespace Player.Core
             // Handle horizontal movement
             if (moveDirection.magnitude >= 0.1f)
             {
-                movement = moveDirection * (moveSpeed * speedMultiplier);
+                movement.x = moveDirection.x * (moveSpeed * speedMultiplier);
+                movement.z = moveDirection.z * (moveSpeed * speedMultiplier);
             }
             
-            // Apply gravity/vertical movement
+            // Always apply vertical movement, even if there's no horizontal movement
             movement.y = VerticalVelocity;
+            
+            // Debug log when jumping
+            if (movement.y > 0)
+            {
+                Debug.Log($"Move - Final movement vector: {movement}, VerticalVelocity: {VerticalVelocity}");
+            }
             
             // Apply final movement
             CharacterController.Move(movement * Time.deltaTime);

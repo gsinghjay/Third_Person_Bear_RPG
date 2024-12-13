@@ -46,34 +46,65 @@ namespace Player.States
         public virtual void Update() { }
         public virtual void HandleMovement(Vector2 input) { }
         public virtual void HandleCombat() { }
-        public virtual void HandleJump() { }
+        public virtual void HandleJump()
+        {
+            if (characterController.isGrounded && playerInput.IsJumping && !animationController.IsJumping())
+            {
+                // Apply jump force
+                playerController.VerticalVelocity = playerController.JumpForce;
+                animationController.StartJump();
+                
+                // Ensure immediate upward movement
+                Vector3 jumpMovement = new Vector3(0, playerController.VerticalVelocity, 0);
+                playerController.Move(jumpMovement);
+                
+                Debug.Log($"Jump initiated - Force: {playerController.JumpForce}, " +
+                         $"Initial Movement: {jumpMovement}");
+            }
+            
+            ApplyGravity();
+            HandleJumpAnimation(characterController.isGrounded, playerController.VerticalVelocity);
+        }
 
         protected void ApplyGravity()
         {
+            float gravityValue = Physics.gravity.y;
+            float gravityMultiplier = 2.5f;
+
             if (characterController.isGrounded && playerController.VerticalVelocity <= 0)
             {
                 playerController.VerticalVelocity = -0.5f;
+                Debug.Log("Grounded, resetting vertical velocity");
             }
             else
             {
-                playerController.VerticalVelocity += Physics.gravity.y * Time.deltaTime;
+                float previousVelocity = playerController.VerticalVelocity;
+                playerController.VerticalVelocity += gravityValue * gravityMultiplier * Time.deltaTime;
                 
+                // Terminal velocity
                 if (playerController.VerticalVelocity < -20f)
                     playerController.VerticalVelocity = -20f;
+
+                if (previousVelocity != playerController.VerticalVelocity)
+                {
+                    Debug.Log($"Applying gravity - Previous: {previousVelocity}, Current: {playerController.VerticalVelocity}");
+                }
             }
         }
 
         protected void UpdateAnimations(bool isMoving, Vector2 movementInput)
         {
-            if (animationController == null)
+            if (animationController == null) return;
+
+            float speedValue = 0f;
+            
+            // Don't override animation speed if jumping
+            if (animationController.IsJumping())
             {
-                Debug.LogError($"{GetType().Name}: No animation controller available!");
                 return;
             }
 
-            float speedValue = 0f;
-            string currentState = GetType().Name;
-            
+            // Otherwise calculate speed value based on state and movement
             if (this is IdleState)
                 speedValue = isMoving ? 0.5f : 0f;
             else if (this is SprintState)
