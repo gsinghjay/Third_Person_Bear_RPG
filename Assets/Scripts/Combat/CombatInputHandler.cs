@@ -48,6 +48,12 @@ public class CombatInputHandler : MonoBehaviour
 
     private void HandleAttackInput()
     {
+        // Don't allow attacks while jumping
+        if (animationController != null && animationController.IsJumping())
+        {
+            return;
+        }
+
         if (canBasicAttack && Input.GetMouseButtonDown(0))
         {
             PerformAttack();

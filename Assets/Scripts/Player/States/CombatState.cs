@@ -47,6 +47,12 @@ namespace Player.States
 
         public override void HandleCombat()
         {
+            // Don't allow attacks while jumping
+            if (animationController.IsJumping())
+            {
+                return;
+            }
+
             if (attackTimer <= 0)
             {
                 if (playerInput != null && playerInput.IsAttacking)

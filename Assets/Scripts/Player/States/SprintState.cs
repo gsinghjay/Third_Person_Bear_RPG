@@ -43,6 +43,8 @@ namespace Player.States
 
         public override void HandleCombat()
         {
+            if (animationController.IsJumping()) return;
+
             if (playerInput.IsAttacking)
             {
                 Debug.Log("SprintState: Transitioning to CombatState due to attack");

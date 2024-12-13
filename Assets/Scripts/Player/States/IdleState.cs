@@ -45,7 +45,7 @@ namespace Player.States
 
         public override void HandleCombat()
         {
-            if (playerInput == null || playerController == null) return;
+            if (playerInput == null || playerController == null || animationController.IsJumping()) return;
 
             if (playerInput.IsAttacking)
             {

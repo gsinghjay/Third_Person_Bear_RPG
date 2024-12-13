@@ -3565,7 +3565,7 @@ MonoBehaviour:
   followHeight: 1.5
   followDamping: 2
   cameraTarget: {fileID: 2014116238}
-  mouseSensitivity: 2
+  mouseSensitivity: 1
 --- !u!1 &974744879
 GameObject:
   m_ObjectHideFlags: 0
@@ -5600,6 +5600,7 @@ MonoBehaviour:
     _Clip: {fileID: 1827226128182048838, guid: 61f2c64d4f97d9f459a1d367eb16fb13, type: 3}
     _NormalizedStartTime: NaN
   _transitionDuration: 0.25
+  _attackAnimationSpeed: 0.5
   references:
     version: 2
     RefIds: []
