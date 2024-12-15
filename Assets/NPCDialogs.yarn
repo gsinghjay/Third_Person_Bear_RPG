@@ -1,0 +1,11 @@
+﻿title: FirstNPC
+---
+NPC: Hello warrior! #line:001
+NPC: The bears have taken over our training arenas. #line:002
+NPC: Will you help us reclaim them? #line:003
+-> Yes, I'll help
+    <<set $acceptedQuest to true>>
+    NPC: Thank you, brave warrior! Clear the first arena of bears. #line:004
+-> Not now
+    NPC: Perhaps when you're ready... #line:005
+===
