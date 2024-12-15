@@ -20,7 +20,7 @@ namespace Enemies.Core
         public float AttackRange => attackRange;
         public float DetectionRange => detectionRange;
         
-        public float Health { get; protected set; }
+        public float Health => currentHealth;
         public abstract BearType Type { get; }
         
         public Animator Animator { get; private set; }
@@ -30,13 +30,18 @@ namespace Enemies.Core
 
         protected IBearState currentState;
 
+        public string QuestId { get; set; }
+        public event System.Action<IBear> OnDeath; // Instance event
+
+        protected float currentHealth;
+
         protected virtual void Awake()
         {
             Animator = GetComponent<Animator>();
             Agent = GetComponent<NavMeshAgent>();
             Collider = GetComponent<CapsuleCollider>();
             PlayerTransform = GameObject.FindGameObjectWithTag("Player").transform;
-            Health = maxHealth;
+            currentHealth = maxHealth;
             
             if (Agent != null)
             {
@@ -55,16 +60,16 @@ namespace Enemies.Core
         public virtual void Initialize(Vector3 spawnPosition)
         {
             transform.position = spawnPosition;
+            currentHealth = maxHealth;
             ChangeState(new BearIdleState(this));
         }
 
         public virtual void TakeDamage(float damage, DamageType damageType)
         {
-            float finalDamage = CalculateDamage(damage, damageType);
-            Debug.Log($"Bear took {finalDamage} damage of type {damageType}");
-            Health -= finalDamage;
-            
-            if (Health <= 0)
+            float calculatedDamage = CalculateDamage(damage, damageType);
+            currentHealth -= calculatedDamage;
+
+            if (currentHealth <= 0)
             {
                 Die();
             }
@@ -77,38 +82,20 @@ namespace Enemies.Core
 
         protected virtual void Die()
         {
-            Debug.Log($"Bear dying: {gameObject.name}");
+            // Trigger the death event before destroying
+            OnDeath?.Invoke(this);
             
-            // Stop all coroutines first
-            StopAllCoroutines();
-            
-            // Disable state updates
-            currentState?.Exit();
-            currentState = null;
-            
-            // Safely disable NavMeshAgent
-            if (Agent != null)
-            {
-                if (Agent.isOnNavMesh)
-                {
-                    Agent.isStopped = true;
-                    Agent.ResetPath();
-                }
-                Agent.enabled = false;
-            }
-            
-            // Play death animation
             if (Animator != null)
             {
                 Animator.SetTrigger("Death");
             }
             
-            // Disable collider
             if (Collider != null)
             {
                 Collider.enabled = false;
             }
             
+            // Add delay before destruction to allow for death animation
             Destroy(gameObject, 2f);
         }
 
