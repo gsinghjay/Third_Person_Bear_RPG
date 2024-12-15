@@ -15,8 +15,8 @@ public class YarnDialogController : MonoBehaviour
             Instance = this;
             DontDestroyOnLoad(gameObject);
             
-            // Register only the commands we need
-            dialogueRunner.AddCommandHandler<string>("startQuest", StartQuest);
+            // Remove direct command registration
+            // Let QuestManager handle the commands
         }
         else
         {
@@ -29,31 +29,12 @@ public class YarnDialogController : MonoBehaviour
         dialoguePanel.SetActive(true);
         dialogueRunner.StartDialogue(nodeName);
     }
-    
-    private void StartQuest(string questId)
-    {
-        if (QuestManager.Instance != null)
-        {
-            QuestManager.Instance.StartQuest(questId);
-            Debug.Log($"Starting quest: {questId}");
-        }
-        else
-        {
-            Debug.LogError("QuestManager instance not found!");
-        }
-    }
 
     private void OnDestroy()
     {
         if (Instance == this)
         {
             Instance = null;
-        }
-
-        // Only remove commands we actually registered
-        if (dialogueRunner != null)
-        {
-            dialogueRunner.RemoveCommandHandler("startQuest");
         }
     }
 }

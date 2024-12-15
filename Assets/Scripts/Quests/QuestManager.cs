@@ -84,10 +84,12 @@ public class QuestManager : MonoBehaviour
         {
             try
             {
-                dialogueRunner.RemoveCommandHandler("startQuest");
-                dialogueRunner.AddCommandHandler<string>("startQuest", StartQuestCommand);
-                commandsRegistered = true;
-                Debug.Log("Successfully registered startQuest command");
+                if (!dialogueRunner.IsCommandRegistered("startQuest"))
+                {
+                    dialogueRunner.AddCommandHandler<string>("startQuest", StartQuestCommand);
+                    commandsRegistered = true;
+                    Debug.Log("Successfully registered startQuest command");
+                }
             }
             catch (System.Exception e)
             {
@@ -102,9 +104,12 @@ public class QuestManager : MonoBehaviour
         {
             try
             {
-                dialogueRunner.RemoveCommandHandler("startQuest");
-                commandsRegistered = false;
-                Debug.Log("Successfully unregistered startQuest command");
+                if (dialogueRunner.IsCommandRegistered("startQuest"))
+                {
+                    dialogueRunner.RemoveCommandHandler("startQuest");
+                    commandsRegistered = false;
+                    Debug.Log("Successfully unregistered startQuest command");
+                }
             }
             catch (System.Exception e)
             {
