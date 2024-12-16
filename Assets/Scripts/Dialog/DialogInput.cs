@@ -11,16 +11,4 @@ public class DialogueInput : MonoBehaviour
         dialogueRunner = FindObjectOfType<DialogueRunner>();
         lineView = FindObjectOfType<LineView>();
     }
-
-    private void Update()
-    {
-        // Only allow input when dialogue is running
-        if (dialogueRunner.IsDialogueRunning)
-        {
-            if (Input.GetKeyDown(KeyCode.E))
-            {
-                lineView.OnContinueClicked();
-            }
-        }
-    }
 }
