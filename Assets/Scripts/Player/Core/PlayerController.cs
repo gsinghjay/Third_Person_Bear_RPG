@@ -36,6 +36,7 @@ namespace Player.Core
 
         private IPlayerState currentState;
         private Transform cameraTransform;
+        private PlayerHealthComponent healthComponent;
         
         private void Awake()
         {
@@ -63,6 +64,12 @@ namespace Player.Core
             
             SetupCamera();
             LockCursor();
+            healthComponent = GetComponent<PlayerHealthComponent>();
+            
+            if (healthComponent == null)
+            {
+                Debug.LogError("PlayerController: Missing PlayerHealthComponent!");
+            }
         }
         
         private void Start()
@@ -269,5 +276,7 @@ namespace Player.Core
                     Time.deltaTime * rotationSpeed);
             }
         }
+
+        public PlayerHealthComponent HealthComponent => healthComponent;
     }
 } 
