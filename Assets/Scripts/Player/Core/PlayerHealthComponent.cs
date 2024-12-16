@@ -48,6 +48,23 @@ namespace Player.Core
             }
         }
 
+        public override void Heal(float amount)
+        {
+            if (!IsAlive) return;
+
+            float previousHealth = CurrentHealth;
+            base.Heal(amount);
+
+            // Add visual or audio feedback specific to player healing
+            Debug.Log($"Player healed for {amount}. Current health: {CurrentHealth}");
+
+            // You could trigger healing VFX or animation here
+            if (animator != null)
+            {
+                // Example: animator.SetTrigger("Heal");
+            }
+        }
+
         private float CalculateDamage(float amount, DamageType damageType)
         {
             float finalDamage = amount;
@@ -91,7 +108,6 @@ namespace Player.Core
         private void ResetHealth()
         {
             currentHealth = maxHealth;
-            // Use the protected method from base class to notify of health change
             NotifyHealthChanged();
             Debug.Log($"Health reset to {currentHealth}");
         }
