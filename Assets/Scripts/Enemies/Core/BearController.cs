@@ -4,6 +4,7 @@ using Enemies.States;
 using Enemies.Interfaces;
 using Enemies.Types;
 using System.Collections;
+using Player.Core;
 
 namespace Enemies.Core
 {
@@ -12,13 +13,16 @@ namespace Enemies.Core
     {
         [Header("Base Stats")]
         [SerializeField] protected float maxHealth = 100f;
+        [SerializeField] protected float baseDamage = 20f;
         [SerializeField] protected float moveSpeed = 5f;
         [SerializeField] protected float attackRange = 2f;
         [SerializeField] protected float detectionRange = 10f;
+        [SerializeField] protected float attackSpeed = 1f;
         
         public float MoveSpeed => moveSpeed;
         public float AttackRange => attackRange;
         public float DetectionRange => detectionRange;
+        public float AttackSpeed => attackSpeed;
         
         public float Health => currentHealth;
         public abstract BearType Type { get; }
@@ -119,7 +123,28 @@ namespace Enemies.Core
 
         public void DealDamage()
         {
-            Debug.Log($"{Type} Bear deals damage to the player!");
+            float distanceToPlayer = Vector3.Distance(transform.position, PlayerTransform.position);
+            if (distanceToPlayer <= attackRange)
+            {
+                var playerHealth = PlayerTransform.GetComponent<PlayerHealthComponent>();
+                if (playerHealth != null)
+                {
+                    float damage = baseDamage;
+                    ElementalBearController elementalBear = this as ElementalBearController;
+                    if (elementalBear != null)
+                    {
+                        damage += elementalBear.ElementalDamage;
+                    }
+                    
+                    playerHealth.TakeDamage(damage, GetDamageType());
+                    Debug.Log($"{Type} Bear deals {damage} damage to the player!");
+                }
+            }
+        }
+
+        protected virtual DamageType GetDamageType()
+        {
+            return DamageType.Physical; // Base bears deal physical damage
         }
 
         // Add debug visualization
