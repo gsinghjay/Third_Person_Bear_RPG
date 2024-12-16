@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 using Enemies.Core;
 using Enemies.Types;
 using Enemies.Interfaces;
@@ -32,18 +33,16 @@ public class QuestManager : MonoBehaviour
     [SerializeField] private BearSpawner bearSpawner;
     [SerializeField] private DialogueRunner dialogueRunner;
 
-    private bool commandsRegistered = false;
-
     private Dictionary<string, ArenaSettings> arenaSettings = new();
+
+    private HashSet<string> declinedQuests = new HashSet<string>();
 
     private void OnEnable()
     {
         if (dialogueRunner == null)
             dialogueRunner = FindObjectOfType<DialogueRunner>();
-            
-        RegisterYarnCommands();
 
-        // Subscribe to bear death events using the correct event name
+        // Subscribe to bear death events
         foreach (var bear in FindObjectsOfType<BearController>())
         {
             bear.OnDeath += HandleBearDeath;
@@ -52,9 +51,7 @@ public class QuestManager : MonoBehaviour
 
     private void OnDisable()
     {
-        UnregisterYarnCommands();
-
-        // Unsubscribe from bear death events using the correct event name
+        // Unsubscribe from bear death events
         foreach (var bear in FindObjectsOfType<BearController>())
         {
             bear.OnDeath -= HandleBearDeath;
@@ -137,53 +134,11 @@ public class QuestManager : MonoBehaviour
         }
     }
 
-    private void RegisterYarnCommands()
-    {
-        if (!commandsRegistered && dialogueRunner != null)
-        {
-            try
-            {
-                if (!dialogueRunner.IsCommandRegistered("startQuest"))
-                {
-                    dialogueRunner.AddCommandHandler<string>("startQuest", StartQuestCommand);
-                    commandsRegistered = true;
-                    Debug.Log("Successfully registered startQuest command");
-                }
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogWarning($"Error registering startQuest command: {e.Message}");
-            }
-        }
-    }
-
-    private void UnregisterYarnCommands()
-    {
-        if (commandsRegistered && dialogueRunner != null)
-        {
-            try
-            {
-                if (dialogueRunner.IsCommandRegistered("startQuest"))
-                {
-                    dialogueRunner.RemoveCommandHandler("startQuest");
-                    commandsRegistered = false;
-                    Debug.Log("Successfully unregistered startQuest command");
-                }
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogWarning($"Error unregistering startQuest command: {e.Message}");
-            }
-        }
-    }
-
-    private void StartQuestCommand(string questId)
-    {
-        StartQuest(questId);
-    }
-
     public void StartQuest(string questId)
     {
+        // Remove from declined quests if it was previously declined
+        declinedQuests.Remove(questId);
+
         if (string.IsNullOrEmpty(questId))
         {
             Debug.LogError("Invalid quest ID: null or empty");
@@ -198,7 +153,6 @@ public class QuestManager : MonoBehaviour
                 activeQuests[questId] = questData;
                 OnQuestStarted?.Invoke(questData);
                 
-                // Validate BearSpawner before spawning
                 if (bearSpawner != null && bearSpawner.IsInitialized)
                 {
                     SpawnBearsForQuest(questId);
@@ -209,6 +163,21 @@ public class QuestManager : MonoBehaviour
                 }
             }
         }
+    }
+
+    public void DeclineQuest(string questId)
+    {
+        declinedQuests.Add(questId);
+    }
+
+    public bool HasActiveQuest()
+    {
+        return activeQuests.Values.Any(q => !q.isCompleted);
+    }
+
+    public bool WasQuestDeclined(string questId)
+    {
+        return declinedQuests.Contains(questId);
     }
 
     private BearSpawner.ArenaType GetArenaTypeFromQuestId(string questId)
@@ -422,7 +391,7 @@ public class QuestManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        UnregisterYarnCommands();
+        // UnregisterYarnCommands();
     }
 
     public void RegisterQuest(QuestData quest)
@@ -456,6 +425,18 @@ public class QuestManager : MonoBehaviour
         }
         
         Debug.LogError($"Required arena references missing for quest {questId}");
+        return null;
+    }
+
+    public QuestData GetCurrentActiveQuest()
+    {
+        foreach (var quest in activeQuests.Values)
+        {
+            if (!quest.isCompleted)
+            {
+                return quest;
+            }
+        }
         return null;
     }
 }

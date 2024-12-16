@@ -4234,6 +4234,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   dialogueRunner: {fileID: 864023041}
   dialoguePanel: {fileID: 1984356804}
+  questManager: {fileID: 0}
+  questUI: {fileID: 0}
 --- !u!1001 &866149625
 PrefabInstance:
   m_ObjectHideFlags: 0

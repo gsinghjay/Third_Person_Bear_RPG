@@ -29,7 +29,7 @@ public class QuestUI : MonoBehaviour
         }
     }
 
-    private void UpdateQuestUI(QuestData quest)
+    public void UpdateQuestUI(QuestData quest)
     {
         if (questPanel != null)
         {
@@ -63,7 +63,7 @@ public class QuestUI : MonoBehaviour
         Invoke(nameof(HideQuestPanel), 3f);
     }
 
-    private void HideQuestPanel()
+    public void HideQuestPanel()
     {
         if (questPanel != null)
         {
