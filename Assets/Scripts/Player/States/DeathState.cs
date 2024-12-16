@@ -5,8 +5,6 @@ namespace Player.States
 {
     public class DeathState : PlayerStateBase
     {
-        private bool deathAnimationPlayed = false;
-
         public DeathState(PlayerController controller) : base(controller) { }
 
         public override void Enter()
@@ -17,7 +15,6 @@ namespace Player.States
             if (animationController != null)
             {
                 animationController.PlayDeathAnimation();
-                deathAnimationPlayed = true;
             }
             
             // Disable only movement and input temporarily
