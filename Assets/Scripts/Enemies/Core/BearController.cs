@@ -5,6 +5,7 @@ using Enemies.Interfaces;
 using Enemies.Types;
 using System.Collections;
 using Player.Core;
+using Items;
 
 namespace Enemies.Core
 {
@@ -132,6 +133,9 @@ namespace Enemies.Core
                 
                 // Set the flag before invoking OnDeath
                 questUpdateHandled = false;
+                
+                // Spawn food drop
+                FoodDropManager.Instance?.SpawnFoodDrop(transform.position, transform.rotation);
                 
                 // Notify about death
                 OnDeath?.Invoke(this);
