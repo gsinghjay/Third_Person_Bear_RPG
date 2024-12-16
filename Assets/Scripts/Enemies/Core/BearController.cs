@@ -38,6 +38,15 @@ namespace Enemies.Core
         public event System.Action<IBear> OnDeath; // Instance event
 
         protected float currentHealth;
+        protected bool isDead = false;
+
+        private bool questUpdateHandled = false;
+        
+        public bool QuestUpdateHandled 
+        { 
+            get => questUpdateHandled;
+            set => questUpdateHandled = value;
+        }
 
         protected virtual void Awake()
         {
@@ -65,7 +74,37 @@ namespace Enemies.Core
         {
             transform.position = spawnPosition;
             currentHealth = maxHealth;
+            isDead = false;
+
+            // Set quest ID based on position if not already set
+            if (string.IsNullOrEmpty(QuestId))
+            {
+                QuestId = DetermineQuestId(spawnPosition);
+            }
+
             ChangeState(new BearIdleState(this));
+        }
+
+        private string DetermineQuestId(Vector3 position)
+        {
+            // Convert to 2D position for arena check
+            Vector2 position2D = new Vector2(position.x, position.z);
+            
+            // Check each arena's bounds
+            if (IsInArenaRange(position2D, new Vector2(-35f, 35f), 35f))  // Northwest arena
+                return "northwest_arena";
+            if (IsInArenaRange(position2D, new Vector2(35f, 35f), 35f))   // Northeast arena
+                return "northeast_arena";
+            if (IsInArenaRange(position2D, new Vector2(0f, -35f), 35f))   // Boss arena
+                return "boss_arena";
+            
+            Debug.LogWarning($"Bear spawned outside known arena bounds at {position}");
+            return "unknown";
+        }
+
+        private bool IsInArenaRange(Vector2 position, Vector2 arenaCenter, float radius)
+        {
+            return Vector2.Distance(position, arenaCenter) <= radius;
         }
 
         public virtual void TakeDamage(float damage, DamageType damageType)
@@ -86,21 +125,20 @@ namespace Enemies.Core
 
         protected virtual void Die()
         {
-            // Trigger the death event before destroying
-            OnDeath?.Invoke(this);
-            
-            if (Animator != null)
+            if (currentHealth <= 0 && !isDead)
             {
-                Animator.SetTrigger("Death");
+                isDead = true;
+                Debug.Log($"{Type} Bear died!");
+                
+                // Set the flag before invoking OnDeath
+                questUpdateHandled = false;
+                
+                // Notify about death
+                OnDeath?.Invoke(this);
+                
+                // Change to death state
+                ChangeState(new BearDeathState(this));
             }
-            
-            if (Collider != null)
-            {
-                Collider.enabled = false;
-            }
-            
-            // Add delay before destruction to allow for death animation
-            Destroy(gameObject, 2f);
         }
 
         public void ChangeState(IBearState newState)

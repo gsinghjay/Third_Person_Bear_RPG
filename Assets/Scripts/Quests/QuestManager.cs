@@ -34,6 +34,8 @@ public class QuestManager : MonoBehaviour
 
     private bool commandsRegistered = false;
 
+    private Dictionary<string, ArenaSettings> arenaSettings = new();
+
     private void OnEnable()
     {
         if (dialogueRunner == null)
@@ -66,12 +68,52 @@ public class QuestManager : MonoBehaviour
             _instance = this;
             DontDestroyOnLoad(gameObject);
             
+            InitializeArenaSettings();
             InitializeReferences();
         }
         else if (_instance != this)
         {
             Destroy(gameObject);
         }
+    }
+
+    private void InitializeArenaSettings()
+    {
+        // Northwest Arena (Training Arena)
+        arenaSettings["northwest_arena"] = new ArenaSettings
+        {
+            questId = "northwest_arena",
+            name = "Northwest Training Arena",
+            position = new Vector2(-35f, 35f),
+            radius = 35f,
+            normalBearCount = 3,
+            fireBearCount = 0,
+            iceBearCount = 0
+        };
+
+        // Northeast Arena (Fire Arena)
+        arenaSettings["northeast_arena"] = new ArenaSettings
+        {
+            questId = "northeast_arena",
+            name = "Northeast Fire Arena",
+            position = new Vector2(35f, 35f),
+            radius = 35f,
+            normalBearCount = 2,
+            fireBearCount = 2,
+            iceBearCount = 0
+        };
+
+        // Boss Arena
+        arenaSettings["boss_arena"] = new ArenaSettings
+        {
+            questId = "boss_arena",
+            name = "Boss Arena",
+            position = new Vector2(0f, -35f),
+            radius = 35f,
+            normalBearCount = 1,
+            fireBearCount = 2,
+            iceBearCount = 2
+        };
     }
 
     private void InitializeReferences()
@@ -210,18 +252,24 @@ public class QuestManager : MonoBehaviour
     {
         if (bearSpawner == null) return false;
 
-        // Check specific arena requirements based on quest ID
-        switch (questId)
+        // Check if we have settings for this arena
+        if (!arenaSettings.ContainsKey(questId))
         {
-            case "northwest_arena":
-                return bearSpawner.ValidateNorthwestArena();
-            case "northeast_arena":
-                return bearSpawner.ValidateNortheastArena();
-            case "boss_arena":
-                return bearSpawner.ValidateBossArena();
-            default:
-                return false;
+            Debug.LogError($"No arena settings found for quest {questId}");
+            return false;
         }
+
+        var settings = arenaSettings[questId];
+        
+        // Validate the settings
+        if (settings.position == null || settings.radius <= 0)
+        {
+            Debug.LogError($"Invalid arena settings for quest {questId}");
+            return false;
+        }
+
+        // If we got here, the arena is properly configured
+        return true;
     }
 
     private QuestData CreateQuestData(string questId)
@@ -380,5 +428,16 @@ public class QuestManager : MonoBehaviour
                 CompleteQuest(quest);
             }
         }
+    }
+
+    public ArenaSettings GetArenaSettings(string questId)
+    {
+        if (arenaSettings.TryGetValue(questId, out var settings))
+        {
+            return settings;
+        }
+        
+        Debug.LogError($"Required arena references missing for quest {questId}");
+        return null;
     }
 }

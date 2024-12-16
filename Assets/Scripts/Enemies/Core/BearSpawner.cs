@@ -226,8 +226,12 @@ namespace Enemies.Core
             // Unsubscribe from the event
             bear.OnDeath -= HandleBearDeath;
             
-            // Notify the QuestManager
-            QuestManager.Instance.OnBearKilled(bear.QuestId);
+            // Only update quest if not already handled
+            if (!((BearController)bear).QuestUpdateHandled)
+            {
+                QuestManager.Instance.OnBearKilled(bear.QuestId);
+                ((BearController)bear).QuestUpdateHandled = true;
+            }
         }
 
         private void OnDrawGizmos()
