@@ -8,6 +8,9 @@ public class QuestUI : MonoBehaviour
     [SerializeField] private TextMeshProUGUI questTitle;
     [SerializeField] private TextMeshProUGUI questProgress;
     [SerializeField] private TextMeshProUGUI questDescription;
+    
+    // Add victory panel reference
+    [SerializeField] private GameObject victoryPanel;
 
     private void Start()
     {
@@ -22,11 +25,11 @@ public class QuestUI : MonoBehaviour
             Debug.LogError("QuestUI: QuestManager instance not found!");
         }
 
-        // Hide panel initially
+        // Hide panels initially
         if (questPanel != null)
-        {
             questPanel.SetActive(false);
-        }
+        if (victoryPanel != null)
+            victoryPanel.SetActive(false);
     }
 
     public void UpdateQuestUI(QuestData quest)
@@ -54,13 +57,32 @@ public class QuestUI : MonoBehaviour
 
     private void OnQuestCompleted(QuestData quest)
     {
-        if (questProgress != null)
+        if (quest.questId == "boss_arena")
         {
-            questProgress.text = "Quest Completed!";
+            // Show victory panel
+            if (victoryPanel != null)
+            {
+                victoryPanel.SetActive(true);
+                questPanel.SetActive(false);
+            }
+            
+            if (questProgress != null)
+            {
+                questProgress.text = "VICTORY! All arenas cleared!";
+            }
+            
+            // Optional: Add some victory effects or animations here
         }
-
-        // Optional: Hide the panel after a delay
-        Invoke(nameof(HideQuestPanel), 3f);
+        else
+        {
+            if (questProgress != null)
+            {
+                questProgress.text = "Quest Completed!";
+            }
+            
+            // Hide the panel after a delay for non-boss quests
+            Invoke(nameof(HideQuestPanel), 3f);
+        }
     }
 
     public void HideQuestPanel()
@@ -68,6 +90,15 @@ public class QuestUI : MonoBehaviour
         if (questPanel != null)
         {
             questPanel.SetActive(false);
+        }
+    }
+
+    // Add method to hide victory panel if needed
+    public void HideVictoryPanel()
+    {
+        if (victoryPanel != null)
+        {
+            victoryPanel.SetActive(false);
         }
     }
 

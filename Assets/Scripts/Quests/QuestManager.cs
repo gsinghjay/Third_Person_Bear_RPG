@@ -303,32 +303,23 @@ public class QuestManager : MonoBehaviour
             quest.isCompleted = true;
             OnQuestCompleted?.Invoke(quest);
 
-            // First show the completion message
-            if (dialogueRunner != null)
+            // Check if this was the final boss quest
+            if (quest.questId == "boss_arena")
             {
-                dialogueRunner.StartDialogue("QuestComplete");
+                // Show victory dialogue
+                if (dialogueRunner != null)
+                {
+                    dialogueRunner.StartDialogue("Victory");
+                }
             }
-
-            // Don't automatically start the next quest dialogue - let player return to NPC
-            // The appropriate dialogue (NorthwestComplete, NortheastComplete, or Victory)
-            // will be triggered when they talk to the NPC again
-
-            /** Trigger the appropriate next dialogue node
-            switch (quest.questId)
+            else
             {
-                case "northwest_arena":
-                    if (dialogueRunner != null)
-                        dialogueRunner.StartDialogue("NorthwestComplete");
-                    break;
-                case "northeast_arena":
-                    if (dialogueRunner != null)
-                        dialogueRunner.StartDialogue("NortheastComplete");
-                    break;
-                case "boss_arena":
-                    if (dialogueRunner != null)
-                        dialogueRunner.StartDialogue("Victory");
-                    break;
-            } */
+                // Show normal completion message for other quests
+                if (dialogueRunner != null)
+                {
+                    dialogueRunner.StartDialogue("QuestComplete");
+                }
+            }
         }
     }
 
