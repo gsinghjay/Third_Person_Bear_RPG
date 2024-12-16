@@ -1189,7 +1189,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: -80, y: 40}
+  m_SizeDelta: {x: -600, y: 40}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &159695744
 MonoBehaviour:
@@ -1835,7 +1835,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 51b895876559e15429b249835dc48cf4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bearSpawner: {fileID: 0}
+  bearSpawner: {fileID: 368067594}
   dialogueRunner: {fileID: 0}
 --- !u!4 &308240542
 Transform:

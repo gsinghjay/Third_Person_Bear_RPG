@@ -2,6 +2,7 @@ using UnityEngine;
 using Player.Input;
 using Player.Input.Interfaces;
 using Player.States;
+using Yarn.Unity;
 
 namespace Player.Core
 {
@@ -38,6 +39,7 @@ namespace Player.Core
         private Transform cameraTransform;
         private PlayerHealthComponent healthComponent;
         private Vector3 initialSpawnPosition;
+        private DialogueRunner dialogueRunner;
         
         private void Awake()
         {
@@ -70,6 +72,12 @@ namespace Player.Core
             if (healthComponent == null)
             {
                 Debug.LogError("PlayerController: Missing PlayerHealthComponent!");
+            }
+            
+            dialogueRunner = FindObjectOfType<DialogueRunner>();
+            if (dialogueRunner == null)
+            {
+                Debug.LogError("PlayerController: No DialogueRunner found in scene!");
             }
         }
         
@@ -104,6 +112,9 @@ namespace Player.Core
 
         private void HandleInput()
         {
+            // Don't handle input if dialogue is running
+            if (dialogueRunner.IsDialogueRunning) return;
+            
             currentState?.HandleMovement(PlayerInput.MovementInput);
             currentState?.HandleCombat();
             currentState?.HandleJump();
