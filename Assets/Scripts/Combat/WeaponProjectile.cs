@@ -72,8 +72,6 @@ public class WeaponProjectile : MonoBehaviour
         Ray ray = new Ray(previousPosition, rayDirection);
         Debug.DrawRay(ray.origin, ray.direction * rayDistance, Color.red, 1f);
         
-        Debug.Log($"Casting ray from {ray.origin} in direction {ray.direction} for distance {rayDistance}");
-        
         if (Physics.Raycast(ray, out RaycastHit hit, rayDistance, enemyLayer))
         {
             Debug.Log($"Hit something on layer: {LayerMask.LayerToName(hit.collider.gameObject.layer)}");

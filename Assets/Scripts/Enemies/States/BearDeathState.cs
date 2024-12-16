@@ -8,6 +8,7 @@ namespace Enemies.States
         private readonly float deathAnimationDuration = 2f;
         private float deathTimer;
         private bool hasTriggeredQuestUpdate = false;
+        private bool hasStartedCleanup = false;
 
         public BearDeathState(BearController controller) : base(controller) { }
 
@@ -16,35 +17,45 @@ namespace Enemies.States
             base.Enter();
             Debug.Log($"[{bearController.name}] Entering Death State");
 
-            // Stop all movement
-            if (agent != null && agent.isActiveAndEnabled)
-            {
-                agent.isStopped = true;
-                agent.velocity = Vector3.zero;
-            }
+            // Disable components immediately
+            DisableComponents();
 
-            // Play death animation - only use "Death" parameter
+            // Play death animation
             if (animator != null)
             {
                 animator.SetTrigger("Death");
             }
 
-            // Disable collider to prevent further interactions
+            deathTimer = deathAnimationDuration;
+        }
+
+        private void DisableComponents()
+        {
+            // Add safety check for NavMeshAgent
+            if (IsAgentValid())
+            {
+                agent.isStopped = true;
+                agent.enabled = false;
+            }
+
+            // Disable Collider
             if (bearController.Collider != null)
             {
                 bearController.Collider.enabled = false;
             }
 
-            deathTimer = deathAnimationDuration;
+            // Disable Rigidbody if present
+            var rigidbody = bearController.GetComponent<Rigidbody>();
+            if (rigidbody != null)
+            {
+                rigidbody.isKinematic = true;
+            }
         }
 
         public override void Update()
         {
-            base.Update();
-
             if (!hasTriggeredQuestUpdate && !bearController.QuestUpdateHandled)
             {
-                Debug.Log($"Updating quest progress for bear death in {bearController.QuestId}");
                 QuestManager.Instance?.OnBearKilled(bearController.QuestId);
                 bearController.QuestUpdateHandled = true;
                 hasTriggeredQuestUpdate = true;
@@ -52,11 +63,17 @@ namespace Enemies.States
 
             deathTimer -= Time.deltaTime;
             
-            if (deathTimer <= 0)
+            if (deathTimer <= 0 && !hasStartedCleanup)
             {
-                // Destroy the bear after animation completes
-                Object.Destroy(bearController.gameObject);
+                hasStartedCleanup = true;
+                CleanupBear();
             }
+        }
+
+        private void CleanupBear()
+        {
+            Debug.Log($"Destroying bear: {bearController.name}");
+            Object.Destroy(bearController.gameObject);
         }
 
         // Override and empty these methods since dead bears shouldn't move or fight
@@ -65,7 +82,7 @@ namespace Enemies.States
 
         public override void Exit()
         {
-            base.Exit();
+            // Don't call base.Exit() since we don't want to modify the agent
             Debug.Log($"[{bearController.name}] Exiting Death State (This shouldn't happen)");
         }
     }

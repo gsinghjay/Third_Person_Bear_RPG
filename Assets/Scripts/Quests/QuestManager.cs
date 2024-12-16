@@ -296,13 +296,21 @@ public class QuestManager : MonoBehaviour
 
     private int GetRequiredKillsForArena(BearSpawner.ArenaType arenaType)
     {
-        return arenaType switch
+        string questId = arenaType switch
         {
-            BearSpawner.ArenaType.Northwest => 4, // From BearSpawner normalBearCount
-            BearSpawner.ArenaType.Northeast => 4, // normalBearCount + fireBearCount
-            BearSpawner.ArenaType.Boss => 6,      // normalBearCount + fireBearCount + iceBearCount
+            BearSpawner.ArenaType.Northwest => "northwest_arena",
+            BearSpawner.ArenaType.Northeast => "northeast_arena",
+            BearSpawner.ArenaType.Boss => "boss_arena",
             _ => throw new System.ArgumentException($"Invalid arena type: {arenaType}")
         };
+
+        if (arenaSettings.TryGetValue(questId, out var settings))
+        {
+            return settings.normalBearCount + settings.fireBearCount + settings.iceBearCount;
+        }
+
+        Debug.LogError($"No settings found for arena type: {arenaType}");
+        return 0;
     }
 
     public void UpdateQuestProgress(string questId, int bearKills)
@@ -362,17 +370,27 @@ public class QuestManager : MonoBehaviour
 
     private void HandleBearDeath(IBear bear)
     {
-        if (string.IsNullOrEmpty(bear.QuestId)) return;
+        if (string.IsNullOrEmpty(bear.QuestId)) 
+        {
+            Debug.LogWarning("Bear died with no QuestId");
+            return;
+        }
 
         if (activeQuests.TryGetValue(bear.QuestId, out QuestData quest))
         {
             quest.currentBearKills++;
+            Debug.Log($"Quest {quest.questId}: {quest.currentBearKills}/{quest.requiredBearKills} bears killed");
             OnQuestUpdated?.Invoke(quest);
 
             if (quest.currentBearKills >= quest.requiredBearKills)
             {
+                Debug.Log($"Completing quest {quest.questId}");
                 CompleteQuest(quest);
             }
+        }
+        else
+        {
+            Debug.LogWarning($"Bear died for inactive quest: {bear.QuestId}");
         }
     }
 

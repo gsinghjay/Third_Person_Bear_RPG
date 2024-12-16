@@ -44,8 +44,8 @@ namespace Enemies.Core
                             fireArenaCenter.transform.position.z
                         ),
                         radius = 35f,
-                        normalBearCount = 4,
-                        fireBearCount = 0,
+                        normalBearCount = 2,
+                        fireBearCount = 5,
                         iceBearCount = 0
                     }
                 },
@@ -59,8 +59,8 @@ namespace Enemies.Core
                         ),
                         radius = 40f,
                         normalBearCount = 2,
-                        fireBearCount = 2,
-                        iceBearCount = 0
+                        fireBearCount = 0,
+                        iceBearCount = 5
                     }
                 },
                 { ArenaType.Boss, new ArenaSettings
@@ -72,9 +72,9 @@ namespace Enemies.Core
                             bossArenaCenter.transform.position.z
                         ),
                         radius = 50f,
-                        normalBearCount = 2,
-                        fireBearCount = 2,
-                        iceBearCount = 2
+                        normalBearCount = 1,
+                        fireBearCount = 3,
+                        iceBearCount = 3
                     }
                 }
             };

@@ -74,7 +74,6 @@ namespace Player.States
             if (characterController.isGrounded && playerController.VerticalVelocity <= 0)
             {
                 playerController.VerticalVelocity = -0.5f;
-                Debug.Log("Grounded, resetting vertical velocity");
             }
             else
             {
