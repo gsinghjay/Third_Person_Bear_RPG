@@ -49,11 +49,11 @@ public class ControlsUI : MonoBehaviour
     {
         return "Basic Controls:\n\n" +
                "WASD - Move Character\n" +
-               "Space - Jump\n" +
+               "Space - Continue Dialogue\n" +
+               "E - Talk to NPCs\n" +
                "Left Mouse - Basic Attack\n" +
                "Right Mouse - Special Attack\n" +
                "1,2,3 - Switch Elements\n" +
-               "E - Interact\n" +
                "Mouse - Look Around\n\n" +
                "Press ESC to close this window";
     }
