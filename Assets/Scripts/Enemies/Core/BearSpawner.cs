@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.AI;
 using System.Collections.Generic;
 using Enemies.Types;
 using Enemies.Interfaces;
@@ -9,21 +10,25 @@ namespace Enemies.Core
     {
         public enum ArenaType { Northwest, Northeast, Boss }
         
+        [Header("Bear Prefabs")]
         [SerializeField] private GameObject normalBearPrefab;
         [SerializeField] private GameObject fireBearPrefab;
         [SerializeField] private GameObject iceBearPrefab;
-        [SerializeField] private Terrain terrain;
         
-        // Arena center GameObjects
+        [Header("Arena References")]
+        [SerializeField] private Terrain terrain;
         [SerializeField] private GameObject fireArenaCenter;
         [SerializeField] private GameObject iceArenaCenter;
         [SerializeField] private GameObject bossArenaCenter;
         
         private Dictionary<ArenaType, ArenaSettings> arenaSettings;
+        public bool IsInitialized { get; private set; }
 
         private void Awake()
         {
+            ValidateReferences();
             InitializeArenaSettings();
+            IsInitialized = true;
         }
 
         private void InitializeArenaSettings()
@@ -75,14 +80,39 @@ namespace Enemies.Core
             };
         }
 
+        private void ValidateReferences()
+        {
+            if (!terrain) 
+            {
+                terrain = FindObjectOfType<Terrain>();
+                if (!terrain) Debug.LogError("No terrain found!");
+            }
+            
+            if (!fireArenaCenter) Debug.LogError("Fire Arena Center is missing!");
+            if (!iceArenaCenter) Debug.LogError("Ice Arena Center is missing!");
+            if (!bossArenaCenter) Debug.LogError("Boss Arena Center is missing!");
+            
+            if (!normalBearPrefab) Debug.LogError("Normal Bear Prefab is missing!");
+            if (!fireBearPrefab) Debug.LogError("Fire Bear Prefab is missing!");
+            if (!iceBearPrefab) Debug.LogError("Ice Bear Prefab is missing!");
+        }
+
         public void SpawnArena(ArenaType arenaType)
         {
+            if (!IsInitialized)
+            {
+                Debug.LogError("BearSpawner not initialized!");
+                return;
+            }
+
             if (!arenaSettings.TryGetValue(arenaType, out ArenaSettings settings))
             {
                 Debug.LogError($"Arena settings not found for {arenaType}");
                 return;
             }
 
+            Debug.Log($"Spawning {arenaType} arena at position {settings.position}");
+            
             Vector2[] spawnPoints = GenerateArenaSpawnPoints(settings.position, settings.radius, 
                 settings.normalBearCount + settings.fireBearCount + settings.iceBearCount);
             
@@ -93,16 +123,44 @@ namespace Enemies.Core
         {
             List<Vector2> points = new List<Vector2>();
             float spawnRadius = radius * 0.6f;
+            int maxAttempts = 30; // Prevent infinite loops
             
             for (int i = 0; i < count; i++)
             {
-                float angle = (360f / count) * i;
-                float x = center.x + (Mathf.Cos(angle * Mathf.Deg2Rad) * spawnRadius);
-                float z = center.y + (Mathf.Sin(angle * Mathf.Deg2Rad) * spawnRadius);
-                points.Add(new Vector2(x, z));
+                Vector2 validPoint = FindValidSpawnPoint(center, spawnRadius, maxAttempts);
+                points.Add(validPoint);
             }
             
             return points.ToArray();
+        }
+
+        private Vector2 FindValidSpawnPoint(Vector2 center, float radius, int maxAttempts)
+        {
+            for (int attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                float angle = Random.Range(0f, 360f);
+                float distance = Random.Range(radius * 0.3f, radius);
+                
+                float x = center.x + (Mathf.Cos(angle * Mathf.Deg2Rad) * distance);
+                float z = center.y + (Mathf.Sin(angle * Mathf.Deg2Rad) * distance);
+                
+                Vector3 worldPoint = new Vector3(x, 1000f, z); // Start high
+                
+                // Sample terrain height
+                float terrainHeight = terrain.SampleHeight(worldPoint);
+                worldPoint.y = terrainHeight;
+
+                // Check if point is on NavMesh
+                NavMeshHit hit;
+                if (NavMesh.SamplePosition(worldPoint, out hit, 5f, NavMesh.AllAreas))
+                {
+                    return new Vector2(hit.position.x, hit.position.z);
+                }
+            }
+            
+            // Fallback to center point if no valid position found
+            Debug.LogWarning("Could not find valid spawn point, using center position");
+            return center;
         }
 
         private void SpawnBears(Vector2[] spawnPoints, ArenaSettings arena)
@@ -130,14 +188,36 @@ namespace Enemies.Core
 
         private void SpawnBear(GameObject prefab, Vector2 spawnPoint, string questId)
         {
-            Vector3 position = new Vector3(spawnPoint.x, 0, spawnPoint.y);
-            GameObject bearObject = Instantiate(prefab, position, Quaternion.identity);
-            
-            if (bearObject.TryGetComponent<IBear>(out var bear))
+            if (prefab == null)
             {
-                bear.QuestId = questId;
-                bear.OnDeath += HandleBearDeath;
-                bear.Initialize(position);
+                Debug.LogError("Bear prefab is null!");
+                return;
+            }
+
+            // Convert 2D point to 3D and find valid NavMesh position
+            Vector3 spawnPosition = new Vector3(spawnPoint.x, 1000f, spawnPoint.y);
+            float terrainHeight = terrain.SampleHeight(spawnPosition);
+            spawnPosition.y = terrainHeight;
+
+            NavMeshHit hit;
+            if (NavMesh.SamplePosition(spawnPosition, out hit, 5f, NavMesh.AllAreas))
+            {
+                GameObject bearObject = Instantiate(prefab, hit.position, Quaternion.identity);
+                
+                if (bearObject.TryGetComponent<IBear>(out var bear))
+                {
+                    bear.QuestId = questId;
+                    bear.OnDeath += HandleBearDeath;
+                    bear.Initialize(hit.position);
+                }
+                else
+                {
+                    Debug.LogError($"Failed to get IBear component from spawned bear: {prefab.name}");
+                }
+            }
+            else
+            {
+                Debug.LogError($"Could not find valid NavMesh position near {spawnPosition}");
             }
         }
 
@@ -174,6 +254,19 @@ namespace Enemies.Core
                 // Draw spawn radius
                 Gizmos.color = Color.green;
                 Gizmos.DrawWireSphere(centerWorld, settings.radius * 0.6f);
+
+                // Draw NavMesh validation
+                NavMeshHit hit;
+                if (NavMesh.SamplePosition(centerWorld, out hit, 5f, NavMesh.AllAreas))
+                {
+                    Gizmos.color = Color.green;
+                    Gizmos.DrawLine(centerWorld, hit.position);
+                }
+                else
+                {
+                    Gizmos.color = Color.red;
+                    Gizmos.DrawWireCube(centerWorld, Vector3.one * 2f);
+                }
             }
         }
 
@@ -184,6 +277,24 @@ namespace Enemies.Core
                 return settings;
             }
             return null;
+        }
+
+        public bool ValidateNorthwestArena()
+        {
+            return fireArenaCenter != null && normalBearPrefab != null;
+        }
+
+        public bool ValidateNortheastArena()
+        {
+            return iceArenaCenter != null && normalBearPrefab != null && fireBearPrefab != null;
+        }
+
+        public bool ValidateBossArena()
+        {
+            return bossArenaCenter != null && 
+                   normalBearPrefab != null && 
+                   fireBearPrefab != null && 
+                   iceBearPrefab != null;
         }
 
         // Make ArenaSettings public so it can be accessed

@@ -66,15 +66,32 @@ public class QuestManager : MonoBehaviour
             _instance = this;
             DontDestroyOnLoad(gameObject);
             
-            if (bearSpawner == null)
-                bearSpawner = FindObjectOfType<BearSpawner>();
-                
-            if (dialogueRunner == null)
-                dialogueRunner = FindObjectOfType<DialogueRunner>();
+            InitializeReferences();
         }
         else if (_instance != this)
         {
             Destroy(gameObject);
+        }
+    }
+
+    private void InitializeReferences()
+    {
+        if (bearSpawner == null)
+        {
+            bearSpawner = FindObjectOfType<BearSpawner>();
+            if (bearSpawner == null)
+            {
+                Debug.LogError("BearSpawner not found in scene!");
+            }
+        }
+
+        if (dialogueRunner == null)
+        {
+            dialogueRunner = FindObjectOfType<DialogueRunner>();
+            if (dialogueRunner == null)
+            {
+                Debug.LogError("DialogueRunner not found in scene!");
+            }
         }
     }
 
@@ -125,6 +142,12 @@ public class QuestManager : MonoBehaviour
 
     public void StartQuest(string questId)
     {
+        if (string.IsNullOrEmpty(questId))
+        {
+            Debug.LogError("Invalid quest ID: null or empty");
+            return;
+        }
+
         if (!activeQuests.ContainsKey(questId))
         {
             QuestData questData = CreateQuestData(questId);
@@ -132,7 +155,16 @@ public class QuestManager : MonoBehaviour
             {
                 activeQuests[questId] = questData;
                 OnQuestStarted?.Invoke(questData);
-                SpawnBearsForQuest(questId);
+                
+                // Validate BearSpawner before spawning
+                if (bearSpawner != null && bearSpawner.IsInitialized)
+                {
+                    SpawnBearsForQuest(questId);
+                }
+                else
+                {
+                    Debug.LogError("BearSpawner not properly initialized!");
+                }
             }
         }
     }
@@ -150,14 +182,45 @@ public class QuestManager : MonoBehaviour
 
     private void SpawnBearsForQuest(string questId)
     {
+        if (bearSpawner == null)
+        {
+            Debug.LogError("BearSpawner reference is missing!");
+            return;
+        }
+
         try
         {
+            // Validate arena centers before spawning
+            if (!ValidateArenaReferences(questId))
+            {
+                Debug.LogError($"Required arena references missing for quest {questId}");
+                return;
+            }
+
             var arenaType = GetArenaTypeFromQuestId(questId);
             bearSpawner.SpawnArena(arenaType);
         }
         catch (System.Exception e)
         {
             Debug.LogError($"Error spawning bears for quest {questId}: {e.Message}");
+        }
+    }
+
+    private bool ValidateArenaReferences(string questId)
+    {
+        if (bearSpawner == null) return false;
+
+        // Check specific arena requirements based on quest ID
+        switch (questId)
+        {
+            case "northwest_arena":
+                return bearSpawner.ValidateNorthwestArena();
+            case "northeast_arena":
+                return bearSpawner.ValidateNortheastArena();
+            case "boss_arena":
+                return bearSpawner.ValidateBossArena();
+            default:
+                return false;
         }
     }
 
@@ -214,6 +277,23 @@ public class QuestManager : MonoBehaviour
         {
             quest.isCompleted = true;
             OnQuestCompleted?.Invoke(quest);
+
+            // Trigger the appropriate next dialogue node
+            switch (quest.questId)
+            {
+                case "northwest_arena":
+                    if (dialogueRunner != null)
+                        dialogueRunner.StartDialogue("NorthwestComplete");
+                    break;
+                case "northeast_arena":
+                    if (dialogueRunner != null)
+                        dialogueRunner.StartDialogue("NortheastComplete");
+                    break;
+                case "boss_arena":
+                    if (dialogueRunner != null)
+                        dialogueRunner.StartDialogue("Victory");
+                    break;
+            }
         }
     }
 

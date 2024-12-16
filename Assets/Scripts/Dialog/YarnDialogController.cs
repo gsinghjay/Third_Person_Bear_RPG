@@ -14,13 +14,33 @@ public class YarnDialogController : MonoBehaviour
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
-            
-            // Remove direct command registration
-            // Let QuestManager handle the commands
         }
         else
         {
             Destroy(gameObject);
+        }
+    }
+    
+    public void StartNPCDialogue()
+    {
+        dialoguePanel.SetActive(true);
+        
+        // Check quest progress and start appropriate dialogue
+        if (QuestManager.Instance.IsQuestCompleted("boss_arena"))
+        {
+            dialogueRunner.StartDialogue("Victory");
+        }
+        else if (QuestManager.Instance.IsQuestCompleted("northeast_arena"))
+        {
+            dialogueRunner.StartDialogue("NortheastComplete");
+        }
+        else if (QuestManager.Instance.IsQuestCompleted("northwest_arena"))
+        {
+            dialogueRunner.StartDialogue("NorthwestComplete");
+        }
+        else
+        {
+            dialogueRunner.StartDialogue("FirstNPC");
         }
     }
     

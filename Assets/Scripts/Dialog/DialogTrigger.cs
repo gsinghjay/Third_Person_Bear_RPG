@@ -3,7 +3,6 @@ using Yarn.Unity;
 
 public class DialogTrigger : MonoBehaviour
 {
-    [SerializeField] private string dialogueNodeName = "FirstNPC";
     [SerializeField] private DialogueRunner dialogueRunner;
     private bool isInRange = false;
 
@@ -20,7 +19,7 @@ public class DialogTrigger : MonoBehaviour
         // Start dialogue when E is pressed and player is in range
         if (isInRange && Input.GetKeyDown(KeyCode.E) && !dialogueRunner.IsDialogueRunning)
         {
-            dialogueRunner.StartDialogue(dialogueNodeName);
+            YarnDialogController.Instance.StartNPCDialogue();
         }
     }
 
