@@ -8,7 +8,7 @@ public class WeaponProjectile : MonoBehaviour
     [SerializeField] private float lifetime = 5f;
     [SerializeField] private ParticleSystem hitEffect;
     [SerializeField] private MeshRenderer meshRenderer;
-    [SerializeField] private float hitRadius = 1f;
+    [SerializeField] private float maxRayDistance = 1f;
     
     private DamageType damageType;
     private float damage;
@@ -44,11 +44,10 @@ public class WeaponProjectile : MonoBehaviour
         if (meshRenderer != null)
         {
             meshRenderer.enabled = true;
-        }
-        
-        if (meshRenderer != null && meshRenderer.material != null)
-        {
-            meshRenderer.material.color = damageTypeColors[type];
+            if (meshRenderer.material != null)
+            {
+                meshRenderer.material.color = damageTypeColors[type];
+            }
         }
         
         Destroy(gameObject, lifetime);
@@ -58,37 +57,37 @@ public class WeaponProjectile : MonoBehaviour
     {
         if (!hasHit)
         {
+            Vector3 oldPosition = transform.position;
             transform.position += velocity * Time.deltaTime;
-            CheckForHits();
+            CheckForHits(oldPosition);
         }
     }
 
-    private void CheckForHits()
+    private void CheckForHits(Vector3 previousPosition)
     {
-        Collider[] hits = Physics.OverlapSphere(transform.position, hitRadius, enemyLayer);
-        Debug.Log($"WeaponProjectile: Found {hits.Length} potential targets. Layer mask: {enemyLayer}");
-
-        bool hitSomething = false;
-        foreach (Collider hit in hits)
+        Vector3 rayDirection = (transform.position - previousPosition).normalized;
+        float rayDistance = Vector3.Distance(transform.position, previousPosition) + maxRayDistance;
+        
+        Ray ray = new Ray(previousPosition, rayDirection);
+        Debug.DrawRay(ray.origin, ray.direction * rayDistance, Color.red);
+        
+        if (Physics.Raycast(ray, out RaycastHit hit, rayDistance, enemyLayer))
         {
-            if (hit.TryGetComponent<IBear>(out var bear))
+            if (hit.collider.TryGetComponent<IBear>(out var bear))
             {
-                hitSomething = true;
-                Debug.Log($"WeaponProjectile: Hit bear: {hit.gameObject.name}");
+                Debug.Log($"WeaponProjectile: Hit bear: {hit.collider.gameObject.name}");
                 bear.TakeDamage(damage, damageType);
                 hasHit = true;
                 
                 if (hitEffect != null)
                 {
-                    Instantiate(hitEffect, transform.position, Quaternion.identity);
+                    Instantiate(hitEffect, hit.point, Quaternion.identity);
                 }
                 
                 Destroy(gameObject);
-                break;
             }
         }
-
-        if (!hitSomething)
+        else
         {
             Debug.Log("WeaponProjectile: No bears hit. Check if bears are on the correct layer.");
         }
@@ -96,7 +95,10 @@ public class WeaponProjectile : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, hitRadius);
+        if (!hasHit && Application.isPlaying)
+        {
+            Gizmos.color = Color.yellow;
+            Gizmos.DrawRay(transform.position, velocity.normalized * maxRayDistance);
+        }
     }
 }
