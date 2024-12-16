@@ -303,7 +303,17 @@ public class QuestManager : MonoBehaviour
             quest.isCompleted = true;
             OnQuestCompleted?.Invoke(quest);
 
-            // Trigger the appropriate next dialogue node
+            // First show the completion message
+            if (dialogueRunner != null)
+            {
+                dialogueRunner.StartDialogue("QuestComplete");
+            }
+
+            // Don't automatically start the next quest dialogue - let player return to NPC
+            // The appropriate dialogue (NorthwestComplete, NortheastComplete, or Victory)
+            // will be triggered when they talk to the NPC again
+
+            /** Trigger the appropriate next dialogue node
             switch (quest.questId)
             {
                 case "northwest_arena":
@@ -318,7 +328,7 @@ public class QuestManager : MonoBehaviour
                     if (dialogueRunner != null)
                         dialogueRunner.StartDialogue("Victory");
                     break;
-            }
+            } */
         }
     }
 

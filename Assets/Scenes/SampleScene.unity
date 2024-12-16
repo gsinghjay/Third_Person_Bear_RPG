@@ -4234,8 +4234,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   dialogueRunner: {fileID: 864023041}
   dialoguePanel: {fileID: 1984356804}
-  questManager: {fileID: 0}
-  questUI: {fileID: 0}
+  questManager: {fileID: 308240541}
+  questUI: {fileID: 1984356806}
+  variableStorage: {fileID: 0}
+  yarnProject: {fileID: 7545569452688597077, guid: 4ca1d8d66ff3d6542b8811a8a69ee395, type: 3}
 --- !u!1001 &866149625
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7592,6 +7594,10 @@ PrefabInstance:
       propertyPath: yarnProject
       value: 
       objectReference: {fileID: 7545569452688597077, guid: 4ca1d8d66ff3d6542b8811a8a69ee395, type: 3}
+    - target: {fileID: 3579681405068720530, guid: 7f29e5f7ffdea4a6793cefb278b61f0c, type: 3}
+      propertyPath: startAutomatically
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4540255442126730747, guid: 7f29e5f7ffdea4a6793cefb278b61f0c, type: 3}
       propertyPath: m_IsActive
       value: 0

@@ -29,6 +29,11 @@ title: QuestInProgress
 NPC: {getQuestMessage($currentQuestId)} #line:020
 ===
 
+title: QuestComplete
+---
+NPC: Excellent work clearing the arena! Return to me at the village for your next task. #line:030
+===
+
 title: ReturnToQuest
 ---
 NPC: Ah, you've returned! Ready to help us with our bear problem? #line:017
