@@ -79,28 +79,28 @@ public class QuestManager : MonoBehaviour
 
     private void InitializeArenaSettings()
     {
-        // Northwest Arena (Training Arena)
+        // Northwest Arena (Fire Arena)
         arenaSettings["northwest_arena"] = new ArenaSettings
         {
             questId = "northwest_arena",
-            name = "Northwest Training Arena",
+            name = "Northwest Fire Arena",
             position = new Vector2(-35f, 35f),
             radius = 35f,
-            normalBearCount = 3,
-            fireBearCount = 0,
+            normalBearCount = 2,
+            fireBearCount = 5,
             iceBearCount = 0
         };
 
-        // Northeast Arena (Fire Arena)
+        // Northeast Arena (Ice Arena)
         arenaSettings["northeast_arena"] = new ArenaSettings
         {
             questId = "northeast_arena",
-            name = "Northeast Fire Arena",
+            name = "Northeast Ice Arena",
             position = new Vector2(35f, 35f),
             radius = 35f,
             normalBearCount = 2,
-            fireBearCount = 2,
-            iceBearCount = 0
+            fireBearCount = 0,
+            iceBearCount = 5
         };
 
         // Boss Arena
@@ -112,7 +112,7 @@ public class QuestManager : MonoBehaviour
             radius = 35f,
             normalBearCount = 1,
             fireBearCount = 2,
-            iceBearCount = 2
+            iceBearCount = 4
         };
     }
 
