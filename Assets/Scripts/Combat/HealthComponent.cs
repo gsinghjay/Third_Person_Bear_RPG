@@ -18,6 +18,12 @@ namespace Combat
         public event Action<float> OnHealthChanged;
         public event Action OnDeath;
 
+        // Add this protected method to allow derived classes to trigger the event
+        protected void NotifyHealthChanged()
+        {
+            OnHealthChanged?.Invoke(currentHealth);
+        }
+
         protected virtual void Awake()
         {
             currentHealth = maxHealth;

@@ -37,6 +37,7 @@ namespace Player.Core
         private IPlayerState currentState;
         private Transform cameraTransform;
         private PlayerHealthComponent healthComponent;
+        private Vector3 initialSpawnPosition;
         
         private void Awake()
         {
@@ -75,6 +76,7 @@ namespace Player.Core
         private void Start()
         {
             SetupSceneElements();
+            initialSpawnPosition = transform.position;
             ChangeState(new IdleState(this));
         }
 
@@ -278,5 +280,18 @@ namespace Player.Core
         }
 
         public PlayerHealthComponent HealthComponent => healthComponent;
+
+        public void Respawn()
+        {
+            // Reset position
+            transform.position = initialSpawnPosition;
+            
+            // Re-enable components
+            enabled = true;
+            CharacterController.enabled = true;
+            
+            // Reset state
+            ChangeState(new IdleState(this));
+        }
     }
 } 

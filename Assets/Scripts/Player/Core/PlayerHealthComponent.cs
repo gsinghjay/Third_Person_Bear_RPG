@@ -2,6 +2,7 @@ using UnityEngine;
 using Combat;
 using Player.States;
 using Enemies.Types;
+using System.Collections;
 
 namespace Player.Core
 {
@@ -12,6 +13,7 @@ namespace Player.Core
         private bool isInvulnerable;
         private PlayerController playerController;
         private Animator animator;
+        [SerializeField] private float respawnDelay = 2f;
 
         protected override void Awake()
         {
@@ -42,6 +44,7 @@ namespace Player.Core
             if (playerController != null)
             {
                 playerController.ChangeState(new DeathState(playerController));
+                StartCoroutine(RespawnRoutine());
             }
         }
 
@@ -68,6 +71,29 @@ namespace Player.Core
             isInvulnerable = true;
             yield return new WaitForSeconds(invulnerabilityDuration);
             isInvulnerable = false;
+        }
+
+        private IEnumerator RespawnRoutine()
+        {
+            // Wait for death animation
+            yield return new WaitForSeconds(respawnDelay);
+            
+            // Reset health and notify UI
+            ResetHealth();
+            
+            // Respawn player
+            if (playerController != null)
+            {
+                playerController.Respawn();
+            }
+        }
+
+        private void ResetHealth()
+        {
+            currentHealth = maxHealth;
+            // Use the protected method from base class to notify of health change
+            NotifyHealthChanged();
+            Debug.Log($"Health reset to {currentHealth}");
         }
     }
 }

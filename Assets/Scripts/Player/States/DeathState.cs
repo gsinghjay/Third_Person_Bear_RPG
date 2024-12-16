@@ -20,33 +20,14 @@ namespace Player.States
                 deathAnimationPlayed = true;
             }
             
-            // Disable player input and movement
-            if (playerController != null)
-            {
-                playerController.enabled = false;
-            }
-            
+            // Disable only movement and input temporarily
             if (characterController != null)
             {
                 characterController.enabled = false;
             }
         }
 
-        public override void Update()
-        {
-            base.Update();
-            
-            // Optional: Check if death animation has finished playing
-            if (deathAnimationPlayed && animationController != null)
-            {
-                if (!animationController.IsDeathAnimationPlaying())
-                {
-                    // Handle post-death logic here (e.g., show game over screen)
-                    Debug.Log("Death animation completed");
-                }
-            }
-        }
-
+        // Keep all handle methods empty to prevent any actions during death
         public override void HandleMovement(Vector2 input) { }
         public override void HandleCombat() { }
         public override void HandleJump() { }
