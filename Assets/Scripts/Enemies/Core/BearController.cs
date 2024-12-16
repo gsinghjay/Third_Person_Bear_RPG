@@ -131,6 +131,9 @@ namespace Enemies.Core
                 isDead = true;
                 Debug.Log($"{Type} Bear died!");
                 
+                // Cancel any ongoing state transitions or coroutines
+                StopAllCoroutines();
+                
                 // Set the flag before invoking OnDeath
                 questUpdateHandled = false;
                 
@@ -140,13 +143,21 @@ namespace Enemies.Core
                 // Notify about death
                 OnDeath?.Invoke(this);
                 
-                // Change to death state
-                ChangeState(new BearDeathState(this));
+                // Force exit current state if it exists
+                currentState?.Exit();
+                
+                // Change to death state - this should be the final state
+                var deathState = new BearDeathState(this);
+                currentState = deathState; // Directly set the state instead of using ChangeState
+                deathState.Enter();
             }
         }
 
         public void ChangeState(IBearState newState)
         {
+            // Don't allow state changes if dead
+            if (isDead) return;
+            
             currentState?.Exit();
             currentState = newState;
             currentState.Enter();
