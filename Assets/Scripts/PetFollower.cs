@@ -1,72 +1,94 @@
 using UnityEngine;
+using UnityEngine.AI;
 
 public class PetFollower : MonoBehaviour
 {
     [Header("Follow Settings")]
     [SerializeField] private Transform playerTransform;
-    [SerializeField] private float followSpeed = 5f;
     [SerializeField] private float minDistanceToPlayer = 2f;
     [SerializeField] private float maxDistanceToPlayer = 10f;
+    
+    [Header("NavMesh Settings")]
+    [SerializeField] private NavMeshAgent agent;
+    [SerializeField] private float updatePathInterval = 0.2f;
 
     [Header("Animation")]
     [SerializeField] private Animator animator;
     private readonly int moveSpeedHash = Animator.StringToHash("MoveSpeed");
 
+    private float nextPathUpdate;
+
     private void Start()
     {
-        // If animator is not assigned, try to get it from this GameObject
+        // Get required components
         if (animator == null)
         {
             animator = GetComponent<Animator>();
         }
-
-        // If player transform is not assigned, try to find the main camera's parent
+        if (agent == null)
+        {
+            agent = GetComponent<NavMeshAgent>();
+        }
         if (playerTransform == null)
         {
             playerTransform = Camera.main?.transform.parent;
+        }
+
+        // Configure NavMeshAgent
+        if (agent != null)
+        {
+            agent.stoppingDistance = minDistanceToPlayer;
+            agent.updateRotation = true;
+            agent.updatePosition = true;
         }
     }
 
     private void Update()
     {
-        if (playerTransform == null) return;
+        if (playerTransform == null || agent == null) return;
 
-        Vector3 directionToPlayer = playerTransform.position - transform.position;
-        float distanceToPlayer = directionToPlayer.magnitude;
+        float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
 
-        // Only move if we're further than the minimum distance
+        // Update path periodically to avoid performance overhead
+        if (Time.time >= nextPathUpdate)
+        {
+            UpdatePetMovement(distanceToPlayer);
+            nextPathUpdate = Time.time + updatePathInterval;
+        }
+
+        // Update animation based on agent's velocity
+        if (animator != null)
+        {
+            animator.SetFloat(moveSpeedHash, agent.velocity.magnitude / agent.speed);
+        }
+
+        // Teleport if too far from player
+        if (distanceToPlayer > maxDistanceToPlayer)
+        {
+            TeleportNearPlayer();
+        }
+    }
+
+    private void UpdatePetMovement(float distanceToPlayer)
+    {
         if (distanceToPlayer > minDistanceToPlayer)
         {
-            // Calculate target position
-            Vector3 targetPosition = playerTransform.position;
-            
-            // If beyond max distance, teleport near player
-            if (distanceToPlayer > maxDistanceToPlayer)
-            {
-                Vector3 randomOffset = Random.insideUnitSphere * minDistanceToPlayer;
-                randomOffset.y = 0;
-                transform.position = playerTransform.position + randomOffset;
-            }
-            // Normal following behavior
-            else
-            {
-                Vector3 movement = directionToPlayer.normalized * (followSpeed * Time.deltaTime);
-                transform.position += movement;
-                
-                // Rotate towards movement direction
-                Quaternion targetRotation = Quaternion.LookRotation(directionToPlayer);
-                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 10f * Time.deltaTime);
-            }
-
-            // Update animation if animator exists
-            if (animator != null)
-            {
-                animator.SetFloat(moveSpeedHash, distanceToPlayer > minDistanceToPlayer ? 1f : 0f);
-            }
+            agent.SetDestination(playerTransform.position);
         }
-        else if (animator != null)
+    }
+
+    private void TeleportNearPlayer()
+    {
+        Vector3 randomOffset = Random.insideUnitSphere * minDistanceToPlayer;
+        randomOffset.y = 0;
+        
+        NavMeshHit hit;
+        Vector3 targetPosition = playerTransform.position + randomOffset;
+        
+        // Find nearest valid position on NavMesh
+        if (NavMesh.SamplePosition(targetPosition, out hit, 5f, NavMesh.AllAreas))
         {
-            animator.SetFloat(moveSpeedHash, 0f);
+            agent.Warp(hit.position);
         }
     }
 } 
