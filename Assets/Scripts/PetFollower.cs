@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.AI;
+using Animancer;
 
 public class PetFollower : MonoBehaviour
 {
@@ -12,23 +13,34 @@ public class PetFollower : MonoBehaviour
     [SerializeField] private NavMeshAgent agent;
     [SerializeField] private float updatePathInterval = 0.2f;
 
-    [Header("Animation")]
-    [SerializeField] private Animator animator;
-    private readonly int moveSpeedHash = Animator.StringToHash("MoveSpeed");
+    [Header("Animation Settings")]
+    [SerializeField] private AnimancerComponent _animancer;
+    [SerializeField] private ClipTransition _idleAnimation;
+    [SerializeField] private ClipTransition _walkAnimation;
+    [SerializeField] private ClipTransition _runAnimation;
+    [SerializeField] private ClipTransition _alertAnimation; // For when detecting bears
+    [SerializeField] private float _transitionDuration = 0.25f;
 
     private float nextPathUpdate;
+    private bool isAlerted;
 
     private void Start()
     {
         // Get required components
-        if (animator == null)
+        if (_animancer == null)
         {
-            animator = GetComponent<Animator>();
+            _animancer = GetComponent<AnimancerComponent>();
+            if (_animancer == null)
+            {
+                Debug.LogError("PetFollower: No AnimancerComponent found!");
+            }
         }
+        
         if (agent == null)
         {
             agent = GetComponent<NavMeshAgent>();
         }
+        
         if (playerTransform == null)
         {
             playerTransform = Camera.main?.transform.parent;
@@ -41,6 +53,26 @@ public class PetFollower : MonoBehaviour
             agent.updateRotation = true;
             agent.updatePosition = true;
         }
+
+        InitializeAnimations();
+    }
+
+    private void InitializeAnimations()
+    {
+        if (_animancer == null) return;
+
+        // Set up animation events
+        if (_alertAnimation != null)
+        {
+            _alertAnimation.Events.OnEnd = () =>
+            {
+                isAlerted = false;
+                UpdateAnimation();
+            };
+        }
+
+        // Start with idle animation
+        PlayAnimation(_idleAnimation);
     }
 
     private void Update()
@@ -49,18 +81,15 @@ public class PetFollower : MonoBehaviour
 
         float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
 
-        // Update path periodically to avoid performance overhead
+        // Update path periodically
         if (Time.time >= nextPathUpdate)
         {
             UpdatePetMovement(distanceToPlayer);
             nextPathUpdate = Time.time + updatePathInterval;
         }
 
-        // Update animation based on agent's velocity
-        if (animator != null)
-        {
-            animator.SetFloat(moveSpeedHash, agent.velocity.magnitude / agent.speed);
-        }
+        // Update animation based on movement
+        UpdateAnimation();
 
         // Teleport if too far from player
         if (distanceToPlayer > maxDistanceToPlayer)
@@ -77,6 +106,44 @@ public class PetFollower : MonoBehaviour
         }
     }
 
+    private void UpdateAnimation()
+    {
+        if (_animancer == null) return;
+
+        if (isAlerted && _alertAnimation != null)
+        {
+            PlayAnimation(_alertAnimation);
+            return;
+        }
+
+        // Determine animation based on velocity
+        float speed = agent.velocity.magnitude;
+        
+        if (speed < 0.1f)
+        {
+            PlayAnimation(_idleAnimation);
+        }
+        else if (speed < agent.speed * 0.5f)
+        {
+            PlayAnimation(_walkAnimation);
+        }
+        else
+        {
+            PlayAnimation(_runAnimation);
+        }
+    }
+
+    private void PlayAnimation(ClipTransition animation)
+    {
+        if (animation == null || _animancer == null) return;
+
+        // Don't replay the same animation
+        if (_animancer.IsPlaying(animation)) return;
+
+        // Stop current animation and play new one
+        _animancer.Play(animation, _transitionDuration);
+    }
+
     private void TeleportNearPlayer()
     {
         Vector3 randomOffset = Random.insideUnitSphere * minDistanceToPlayer;
@@ -85,10 +152,19 @@ public class PetFollower : MonoBehaviour
         NavMeshHit hit;
         Vector3 targetPosition = playerTransform.position + randomOffset;
         
-        // Find nearest valid position on NavMesh
         if (NavMesh.SamplePosition(targetPosition, out hit, 5f, NavMesh.AllAreas))
         {
             agent.Warp(hit.position);
+            // Play alert animation when teleporting
+            isAlerted = true;
+            PlayAnimation(_alertAnimation);
         }
+    }
+
+    // Method to trigger alert animation (will be used when detecting bears)
+    public void TriggerAlert()
+    {
+        isAlerted = true;
+        PlayAnimation(_alertAnimation);
     }
 } 

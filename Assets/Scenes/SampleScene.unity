@@ -6522,10 +6522,50 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   playerTransform: {fileID: 704994963}
   minDistanceToPlayer: 2
-  maxDistanceToPlayer: 10
-  agent: {fileID: 0}
+  maxDistanceToPlayer: 20
+  agent: {fileID: 1362095319}
   updatePathInterval: 0.2
-  animator: {fileID: 1362095317}
+  _animancer: {fileID: 1362095320}
+  _idleAnimation:
+    _FadeDuration: 0.25
+    _Speed: 1
+    _Events:
+      _NormalizedTimes: []
+      _Callbacks: []
+      _Names: []
+    _Clip: {fileID: 7400000, guid: eee9d7beb7b440a58147d924f277c7ce, type: 3}
+    _NormalizedStartTime: NaN
+  _walkAnimation:
+    _FadeDuration: 0.25
+    _Speed: 1
+    _Events:
+      _NormalizedTimes: []
+      _Callbacks: []
+      _Names: []
+    _Clip: {fileID: 7400000, guid: 70329e6db728412fb2a6e0371aaaa001, type: 3}
+    _NormalizedStartTime: NaN
+  _runAnimation:
+    _FadeDuration: 0.25
+    _Speed: 1
+    _Events:
+      _NormalizedTimes: []
+      _Callbacks: []
+      _Names: []
+    _Clip: {fileID: 7400000, guid: 60dd7ef4512a4404896e945d3004f2b6, type: 3}
+    _NormalizedStartTime: NaN
+  _alertAnimation:
+    _FadeDuration: 0.25
+    _Speed: 1
+    _Events:
+      _NormalizedTimes: []
+      _Callbacks: []
+      _Names: []
+    _Clip: {fileID: 7400000, guid: d005e95bf0134a26ad4ed5c5b36201ce, type: 3}
+    _NormalizedStartTime: NaN
+  _transitionDuration: 0.25
+  references:
+    version: 2
+    RefIds: []
 --- !u!95 &1362095317 stripped
 Animator:
   m_CorrespondingSourceObject: {fileID: 95706204029656638, guid: e2aafa8770d34a9591b41bedf4e318ba, type: 3}
@@ -6541,8 +6581,8 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: 0
   m_Radius: 0.5
-  m_Speed: 3.5
-  m_Acceleration: 8
+  m_Speed: 20
+  m_Acceleration: 28
   avoidancePriority: 50
   m_AngularSpeed: 120
   m_StoppingDistance: 0
@@ -6553,6 +6593,21 @@ NavMeshAgent:
   m_BaseOffset: 0
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!114 &1362095320
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1362095315}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ad50f81b1d25c441943c37a89ba23f6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _Animator: {fileID: 1362095317}
+  _Transitions: {fileID: 0}
+  _ActionOnDisable: 0
 --- !u!1 &1415142429
 GameObject:
   m_ObjectHideFlags: 0
@@ -9835,6 +9890,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 95706204029656638, guid: e2aafa8770d34a9591b41bedf4e318ba, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -9845,6 +9904,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1524411113276028, guid: e2aafa8770d34a9591b41bedf4e318ba, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1362095319}
+    - targetCorrespondingSourceObject: {fileID: 1524411113276028, guid: e2aafa8770d34a9591b41bedf4e318ba, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1362095320}
   m_SourcePrefab: {fileID: 100100000, guid: e2aafa8770d34a9591b41bedf4e318ba, type: 3}
 --- !u!1001 &2006859041
 PrefabInstance:
