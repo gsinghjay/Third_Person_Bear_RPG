@@ -14,12 +14,15 @@ public class DialogueInput : MonoBehaviour
 
     private void Update()
     {
-        // Only allow input when dialogue is running
-        if (dialogueRunner.IsDialogueRunning)
+        // Only handle space bar input when dialogue is running
+        if (dialogueRunner != null && dialogueRunner.IsDialogueRunning)
         {
-            if (Input.GetKeyDown(KeyCode.E))
+            if (Input.GetKeyDown(KeyCode.Space))
             {
-                lineView.OnContinueClicked();
+                if (lineView != null)
+                {
+                    lineView.OnContinueClicked();
+                }
             }
         }
     }

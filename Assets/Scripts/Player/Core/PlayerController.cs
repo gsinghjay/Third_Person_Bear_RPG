@@ -2,6 +2,7 @@ using UnityEngine;
 using Player.Input;
 using Player.Input.Interfaces;
 using Player.States;
+using Yarn.Unity;
 
 namespace Player.Core
 {
@@ -36,6 +37,9 @@ namespace Player.Core
 
         private IPlayerState currentState;
         private Transform cameraTransform;
+        private PlayerHealthComponent healthComponent;
+        private Vector3 initialSpawnPosition;
+        private DialogueRunner dialogueRunner;
         
         private void Awake()
         {
@@ -63,11 +67,24 @@ namespace Player.Core
             
             SetupCamera();
             LockCursor();
+            healthComponent = GetComponent<PlayerHealthComponent>();
+            
+            if (healthComponent == null)
+            {
+                Debug.LogError("PlayerController: Missing PlayerHealthComponent!");
+            }
+            
+            dialogueRunner = FindObjectOfType<DialogueRunner>();
+            if (dialogueRunner == null)
+            {
+                Debug.LogError("PlayerController: No DialogueRunner found in scene!");
+            }
         }
         
         private void Start()
         {
             SetupSceneElements();
+            initialSpawnPosition = transform.position;
             ChangeState(new IdleState(this));
         }
 
@@ -95,6 +112,9 @@ namespace Player.Core
 
         private void HandleInput()
         {
+            // Don't handle input if dialogue is running
+            if (dialogueRunner.IsDialogueRunning) return;
+            
             currentState?.HandleMovement(PlayerInput.MovementInput);
             currentState?.HandleCombat();
             currentState?.HandleJump();
@@ -268,6 +288,21 @@ namespace Player.Core
                     Quaternion.Euler(0f, targetAngle, 0f), 
                     Time.deltaTime * rotationSpeed);
             }
+        }
+
+        public PlayerHealthComponent HealthComponent => healthComponent;
+
+        public void Respawn()
+        {
+            // Reset position
+            transform.position = initialSpawnPosition;
+            
+            // Re-enable components
+            enabled = true;
+            CharacterController.enabled = true;
+            
+            // Reset state
+            ChangeState(new IdleState(this));
         }
     }
 } 

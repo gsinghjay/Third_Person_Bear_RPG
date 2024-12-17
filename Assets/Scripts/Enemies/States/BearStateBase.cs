@@ -17,12 +17,23 @@ namespace Enemies.States
             agent = controller.Agent;
         }
 
+        protected bool IsAgentValid()
+        {
+            return agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh;
+        }
+
         public virtual void Enter() 
         {
             ResetAllBoolParameters();
         }
         
-        public virtual void Exit() { }
+        public virtual void Exit() 
+        {
+            if (IsAgentValid())
+            {
+                agent.isStopped = true;
+            }
+        }
         public virtual void Update() { }
         public virtual void HandleMovement() { }
         public virtual void HandleCombat() { }

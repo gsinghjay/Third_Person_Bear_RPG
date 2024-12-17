@@ -26,6 +26,9 @@ namespace Player.Core
         [Header("Blend Settings")]
         [SerializeField] private float _transitionDuration = 0.25f;
         
+        [Header("Death Animation")]
+        [SerializeField] private ClipTransition _deathAnimation;
+        
         private bool _isJumping;
 
         private void Awake()
@@ -214,6 +217,29 @@ namespace Player.Core
         public bool IsJumping()
         {
             return _isJumping;
+        }
+
+        public void PlayDeathAnimation()
+        {
+            if (_deathAnimation == null)
+            {
+                Debug.LogError("PlayerAnimationController: Death animation clip not assigned!");
+                return;
+            }
+
+            // Stop any current animation
+            _animancer.Stop();
+
+            // Play death animation
+            var state = _animancer.Play(_deathAnimation, _transitionDuration);
+            state.Time = 0;
+            
+            Debug.Log("PlayerAnimationController: Playing death animation");
+        }
+
+        public bool IsDeathAnimationPlaying()
+        {
+            return _animancer.IsPlaying(_deathAnimation);
         }
     }
 } 

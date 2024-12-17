@@ -1,4 +1,17 @@
-﻿title: FirstNPC
+﻿title: Start
+---
+<<jump FirstNPC>>
+===
+
+title: NPCDialogs
+---
+// Declare variables at the start
+<<declare $currentQuestMessage = "">>
+<<declare $hasActiveQuest = false>>
+<<declare $currentQuestId = "">>
+===
+
+title: FirstNPC
 ---
 NPC: Hello warrior! #line:001
 NPC: The bears have taken over our training arenas. #line:002
@@ -7,32 +20,65 @@ NPC: Will you help us reclaim them? #line:003
     <<startQuest northwest_arena>>
     NPC: Thank you, brave warrior! Clear the northwest arena first. #line:004
 -> Not now
+    <<declineQuest northwest_arena>>
     NPC: Perhaps when you're ready... #line:005
+===
+
+title: QuestInProgress
+---
+NPC: {getQuestMessage($currentQuestId)} #line:020
+===
+
+title: QuestComplete
+---
+NPC: Excellent work clearing the arena! Return to me at the village for your next task. #line:030
+===
+
+title: ReturnToQuest
+---
+NPC: Ah, you've returned! Ready to help us with our bear problem? #line:017
+-> Yes, I'll help now
+    <<startQuest northwest_arena>>
+    NPC: Thank you for reconsidering! Clear the northwest arena first. #line:018
+-> Still not ready
+    <<declineQuest northwest_arena>>
+    NPC: The offer stands when you're ready... #line:019
 ===
 
 title: NorthwestComplete
 ---
-NPC: Well done! The fire bears in the northeast need dealing with next. #line:006
--> I'll handle it
-    <<startQuest northeast_arena>>
-    NPC: Be careful, they're more dangerous than regular bears! #line:007
--> I need to rest
-    NPC: Don't wait too long... #line:008
+<<if $hasActiveQuest>>
+    NPC: {getQuestMessage($currentQuestId)} #line:021
+<<else>>
+    NPC: Well done! The fire bears in the northeast need dealing with next. #line:006
+    -> I'll handle it
+        <<startQuest northeast_arena>>
+        NPC: Be careful, they're more dangerous than regular bears! #line:007
+    -> Not right now
+        <<declineQuest northeast_arena>>
+        NPC: Take your time, but don't wait too long... #line:008
+<<endif>>
 ===
 
 title: NortheastComplete
 ---
-NPC: Impressive! Now for the final challenge... #line:009
--> I'm ready for the boss arena
-    <<startQuest boss_arena>>
-    NPC: This is it. Both fire and ice bears await in the central arena! #line:010
-    NPC: No one has ever cleared all three arenas before... #line:013
--> I need to prepare
-    NPC: Take your time, but hurry back... #line:011
+<<if $hasActiveQuest>>
+    NPC: {getQuestMessage($currentQuestId)} #line:022
+<<else>>
+    NPC: Impressive! Now for the final challenge... #line:009
+    -> I'm ready for the boss arena
+        <<startQuest boss_arena>>
+        NPC: This is it. Both fire and ice bears await in the central arena! #line:010
+        NPC: No one has ever cleared all three arenas before... #line:013
+    -> I need more time
+        <<declineQuest boss_arena>>
+        NPC: Take your time, but hurry back... #line:011
+<<endif>>
 ===
 
 title: Victory
 ---
 NPC: You've done it! All arenas are clear! #line:012
 NPC: You are truly a legendary warrior! #line:014
+NPC: The bears will think twice before invading our training grounds again! #line:015
 ===

@@ -44,8 +44,8 @@ namespace Enemies.Core
                             fireArenaCenter.transform.position.z
                         ),
                         radius = 35f,
-                        normalBearCount = 4,
-                        fireBearCount = 0,
+                        normalBearCount = 2,
+                        fireBearCount = 5,
                         iceBearCount = 0
                     }
                 },
@@ -59,8 +59,8 @@ namespace Enemies.Core
                         ),
                         radius = 40f,
                         normalBearCount = 2,
-                        fireBearCount = 2,
-                        iceBearCount = 0
+                        fireBearCount = 0,
+                        iceBearCount = 5
                     }
                 },
                 { ArenaType.Boss, new ArenaSettings
@@ -72,9 +72,9 @@ namespace Enemies.Core
                             bossArenaCenter.transform.position.z
                         ),
                         radius = 50f,
-                        normalBearCount = 2,
-                        fireBearCount = 2,
-                        iceBearCount = 2
+                        normalBearCount = 1,
+                        fireBearCount = 3,
+                        iceBearCount = 3
                     }
                 }
             };
@@ -226,8 +226,12 @@ namespace Enemies.Core
             // Unsubscribe from the event
             bear.OnDeath -= HandleBearDeath;
             
-            // Notify the QuestManager
-            QuestManager.Instance.OnBearKilled(bear.QuestId);
+            // Only update quest if not already handled
+            if (!((BearController)bear).QuestUpdateHandled)
+            {
+                QuestManager.Instance.OnBearKilled(bear.QuestId);
+                ((BearController)bear).QuestUpdateHandled = true;
+            }
         }
 
         private void OnDrawGizmos()

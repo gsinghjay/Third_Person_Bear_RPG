@@ -14,7 +14,7 @@ public class WeaponProjectile : MonoBehaviour
     private float damage;
     private Vector3 velocity;
     private bool hasHit;
-    private int enemyLayer;
+    private LayerMask enemyLayer;
 
     private readonly Dictionary<DamageType, Color> damageTypeColors = new()
     {
@@ -25,8 +25,8 @@ public class WeaponProjectile : MonoBehaviour
 
     private void Awake()
     {
-        enemyLayer = 1 << LayerMask.NameToLayer("Enemy");
-        Debug.Log($"WeaponProjectile: Enemy layer initialized: {enemyLayer}");
+        enemyLayer = LayerMask.GetMask("Enemy");
+        Debug.Log($"WeaponProjectile: Enemy layer mask initialized: {enemyLayer.value}");
         
         if (meshRenderer != null)
         {
@@ -39,7 +39,8 @@ public class WeaponProjectile : MonoBehaviour
         damageType = type;
         damage = dmg;
         velocity = vel;
-        Debug.Log($"WeaponProjectile: Initialized with damage: {damage}, type: {damageType}");
+        
+        Debug.Log($"WeaponProjectile: Initialized with damage: {damage}, type: {damageType}, velocity: {velocity}");
         
         if (meshRenderer != null)
         {
@@ -69,27 +70,30 @@ public class WeaponProjectile : MonoBehaviour
         float rayDistance = Vector3.Distance(transform.position, previousPosition) + maxRayDistance;
         
         Ray ray = new Ray(previousPosition, rayDirection);
-        Debug.DrawRay(ray.origin, ray.direction * rayDistance, Color.red);
+        Debug.DrawRay(ray.origin, ray.direction * rayDistance, Color.red, 1f);
         
         if (Physics.Raycast(ray, out RaycastHit hit, rayDistance, enemyLayer))
         {
+            Debug.Log($"Hit something on layer: {LayerMask.LayerToName(hit.collider.gameObject.layer)}");
+            
             if (hit.collider.TryGetComponent<IBear>(out var bear))
             {
-                Debug.Log($"WeaponProjectile: Hit bear: {hit.collider.gameObject.name}");
+                Debug.Log($"WeaponProjectile: Hit bear with {damage} {damageType} damage");
                 bear.TakeDamage(damage, damageType);
                 hasHit = true;
                 
                 if (hitEffect != null)
                 {
-                    Instantiate(hitEffect, hit.point, Quaternion.identity);
+                    var effect = Instantiate(hitEffect, hit.point, Quaternion.identity);
+                    effect.Play();
                 }
                 
                 Destroy(gameObject);
             }
-        }
-        else
-        {
-            Debug.Log("WeaponProjectile: No bears hit. Check if bears are on the correct layer.");
+            else
+            {
+                Debug.LogWarning($"Hit object doesn't have IBear component: {hit.collider.gameObject.name}");
+            }
         }
     }
 

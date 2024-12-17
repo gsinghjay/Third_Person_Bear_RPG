@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 using Enemies.Core;
 using Enemies.Types;
 using Enemies.Interfaces;
@@ -32,16 +33,16 @@ public class QuestManager : MonoBehaviour
     [SerializeField] private BearSpawner bearSpawner;
     [SerializeField] private DialogueRunner dialogueRunner;
 
-    private bool commandsRegistered = false;
+    private Dictionary<string, ArenaSettings> arenaSettings = new();
+
+    private HashSet<string> declinedQuests = new HashSet<string>();
 
     private void OnEnable()
     {
         if (dialogueRunner == null)
             dialogueRunner = FindObjectOfType<DialogueRunner>();
-            
-        RegisterYarnCommands();
 
-        // Subscribe to bear death events using the correct event name
+        // Subscribe to bear death events
         foreach (var bear in FindObjectsOfType<BearController>())
         {
             bear.OnDeath += HandleBearDeath;
@@ -50,9 +51,7 @@ public class QuestManager : MonoBehaviour
 
     private void OnDisable()
     {
-        UnregisterYarnCommands();
-
-        // Unsubscribe from bear death events using the correct event name
+        // Unsubscribe from bear death events
         foreach (var bear in FindObjectsOfType<BearController>())
         {
             bear.OnDeath -= HandleBearDeath;
@@ -66,12 +65,52 @@ public class QuestManager : MonoBehaviour
             _instance = this;
             DontDestroyOnLoad(gameObject);
             
+            InitializeArenaSettings();
             InitializeReferences();
         }
         else if (_instance != this)
         {
             Destroy(gameObject);
         }
+    }
+
+    private void InitializeArenaSettings()
+    {
+        // Northwest Arena (Fire Arena)
+        arenaSettings["northwest_arena"] = new ArenaSettings
+        {
+            questId = "northwest_arena",
+            name = "Northwest Fire Arena",
+            position = new Vector2(-35f, 35f),
+            radius = 35f,
+            normalBearCount = 2,
+            fireBearCount = 5,
+            iceBearCount = 0
+        };
+
+        // Northeast Arena (Ice Arena)
+        arenaSettings["northeast_arena"] = new ArenaSettings
+        {
+            questId = "northeast_arena",
+            name = "Northeast Ice Arena",
+            position = new Vector2(35f, 35f),
+            radius = 35f,
+            normalBearCount = 2,
+            fireBearCount = 0,
+            iceBearCount = 5
+        };
+
+        // Boss Arena
+        arenaSettings["boss_arena"] = new ArenaSettings
+        {
+            questId = "boss_arena",
+            name = "Boss Arena",
+            position = new Vector2(0f, -35f),
+            radius = 35f,
+            normalBearCount = 1,
+            fireBearCount = 2,
+            iceBearCount = 4
+        };
     }
 
     private void InitializeReferences()
@@ -95,53 +134,11 @@ public class QuestManager : MonoBehaviour
         }
     }
 
-    private void RegisterYarnCommands()
-    {
-        if (!commandsRegistered && dialogueRunner != null)
-        {
-            try
-            {
-                if (!dialogueRunner.IsCommandRegistered("startQuest"))
-                {
-                    dialogueRunner.AddCommandHandler<string>("startQuest", StartQuestCommand);
-                    commandsRegistered = true;
-                    Debug.Log("Successfully registered startQuest command");
-                }
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogWarning($"Error registering startQuest command: {e.Message}");
-            }
-        }
-    }
-
-    private void UnregisterYarnCommands()
-    {
-        if (commandsRegistered && dialogueRunner != null)
-        {
-            try
-            {
-                if (dialogueRunner.IsCommandRegistered("startQuest"))
-                {
-                    dialogueRunner.RemoveCommandHandler("startQuest");
-                    commandsRegistered = false;
-                    Debug.Log("Successfully unregistered startQuest command");
-                }
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogWarning($"Error unregistering startQuest command: {e.Message}");
-            }
-        }
-    }
-
-    private void StartQuestCommand(string questId)
-    {
-        StartQuest(questId);
-    }
-
     public void StartQuest(string questId)
     {
+        // Remove from declined quests if it was previously declined
+        declinedQuests.Remove(questId);
+
         if (string.IsNullOrEmpty(questId))
         {
             Debug.LogError("Invalid quest ID: null or empty");
@@ -156,7 +153,6 @@ public class QuestManager : MonoBehaviour
                 activeQuests[questId] = questData;
                 OnQuestStarted?.Invoke(questData);
                 
-                // Validate BearSpawner before spawning
                 if (bearSpawner != null && bearSpawner.IsInitialized)
                 {
                     SpawnBearsForQuest(questId);
@@ -167,6 +163,21 @@ public class QuestManager : MonoBehaviour
                 }
             }
         }
+    }
+
+    public void DeclineQuest(string questId)
+    {
+        declinedQuests.Add(questId);
+    }
+
+    public bool HasActiveQuest()
+    {
+        return activeQuests.Values.Any(q => !q.isCompleted);
+    }
+
+    public bool WasQuestDeclined(string questId)
+    {
+        return declinedQuests.Contains(questId);
     }
 
     private BearSpawner.ArenaType GetArenaTypeFromQuestId(string questId)
@@ -210,18 +221,24 @@ public class QuestManager : MonoBehaviour
     {
         if (bearSpawner == null) return false;
 
-        // Check specific arena requirements based on quest ID
-        switch (questId)
+        // Check if we have settings for this arena
+        if (!arenaSettings.ContainsKey(questId))
         {
-            case "northwest_arena":
-                return bearSpawner.ValidateNorthwestArena();
-            case "northeast_arena":
-                return bearSpawner.ValidateNortheastArena();
-            case "boss_arena":
-                return bearSpawner.ValidateBossArena();
-            default:
-                return false;
+            Debug.LogError($"No arena settings found for quest {questId}");
+            return false;
         }
+
+        var settings = arenaSettings[questId];
+        
+        // Validate the settings
+        if (settings.position == null || settings.radius <= 0)
+        {
+            Debug.LogError($"Invalid arena settings for quest {questId}");
+            return false;
+        }
+
+        // If we got here, the arena is properly configured
+        return true;
     }
 
     private QuestData CreateQuestData(string questId)
@@ -248,13 +265,21 @@ public class QuestManager : MonoBehaviour
 
     private int GetRequiredKillsForArena(BearSpawner.ArenaType arenaType)
     {
-        return arenaType switch
+        string questId = arenaType switch
         {
-            BearSpawner.ArenaType.Northwest => 4, // From BearSpawner normalBearCount
-            BearSpawner.ArenaType.Northeast => 4, // normalBearCount + fireBearCount
-            BearSpawner.ArenaType.Boss => 6,      // normalBearCount + fireBearCount + iceBearCount
+            BearSpawner.ArenaType.Northwest => "northwest_arena",
+            BearSpawner.ArenaType.Northeast => "northeast_arena",
+            BearSpawner.ArenaType.Boss => "boss_arena",
             _ => throw new System.ArgumentException($"Invalid arena type: {arenaType}")
         };
+
+        if (arenaSettings.TryGetValue(questId, out var settings))
+        {
+            return settings.normalBearCount + settings.fireBearCount + settings.iceBearCount;
+        }
+
+        Debug.LogError($"No settings found for arena type: {arenaType}");
+        return 0;
     }
 
     public void UpdateQuestProgress(string questId, int bearKills)
@@ -278,21 +303,22 @@ public class QuestManager : MonoBehaviour
             quest.isCompleted = true;
             OnQuestCompleted?.Invoke(quest);
 
-            // Trigger the appropriate next dialogue node
-            switch (quest.questId)
+            // Check if this was the final boss quest
+            if (quest.questId == "boss_arena")
             {
-                case "northwest_arena":
-                    if (dialogueRunner != null)
-                        dialogueRunner.StartDialogue("NorthwestComplete");
-                    break;
-                case "northeast_arena":
-                    if (dialogueRunner != null)
-                        dialogueRunner.StartDialogue("NortheastComplete");
-                    break;
-                case "boss_arena":
-                    if (dialogueRunner != null)
-                        dialogueRunner.StartDialogue("Victory");
-                    break;
+                // Show victory dialogue
+                if (dialogueRunner != null)
+                {
+                    dialogueRunner.StartDialogue("Victory");
+                }
+            }
+            else
+            {
+                // Show normal completion message for other quests
+                if (dialogueRunner != null)
+                {
+                    dialogueRunner.StartDialogue("QuestComplete");
+                }
             }
         }
     }
@@ -314,17 +340,27 @@ public class QuestManager : MonoBehaviour
 
     private void HandleBearDeath(IBear bear)
     {
-        if (string.IsNullOrEmpty(bear.QuestId)) return;
+        if (string.IsNullOrEmpty(bear.QuestId)) 
+        {
+            Debug.LogWarning("Bear died with no QuestId");
+            return;
+        }
 
         if (activeQuests.TryGetValue(bear.QuestId, out QuestData quest))
         {
             quest.currentBearKills++;
+            Debug.Log($"Quest {quest.questId}: {quest.currentBearKills}/{quest.requiredBearKills} bears killed");
             OnQuestUpdated?.Invoke(quest);
 
             if (quest.currentBearKills >= quest.requiredBearKills)
             {
+                Debug.Log($"Completing quest {quest.questId}");
                 CompleteQuest(quest);
             }
+        }
+        else
+        {
+            Debug.LogWarning($"Bear died for inactive quest: {bear.QuestId}");
         }
     }
 
@@ -356,7 +392,7 @@ public class QuestManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        UnregisterYarnCommands();
+        // UnregisterYarnCommands();
     }
 
     public void RegisterQuest(QuestData quest)
@@ -380,5 +416,28 @@ public class QuestManager : MonoBehaviour
                 CompleteQuest(quest);
             }
         }
+    }
+
+    public ArenaSettings GetArenaSettings(string questId)
+    {
+        if (arenaSettings.TryGetValue(questId, out var settings))
+        {
+            return settings;
+        }
+        
+        Debug.LogError($"Required arena references missing for quest {questId}");
+        return null;
+    }
+
+    public QuestData GetCurrentActiveQuest()
+    {
+        foreach (var quest in activeQuests.Values)
+        {
+            if (!quest.isCompleted)
+            {
+                return quest;
+            }
+        }
+        return null;
     }
 }
