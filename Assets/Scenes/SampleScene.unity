@@ -8203,7 +8203,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 24
+  m_fontSize: 18
   m_fontSizeBase: 24
   m_fontWeight: 400
   m_enableAutoSizing: 0
@@ -9521,7 +9521,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.5}
   m_AnchorMax: {x: 0, y: 0.5}
-  m_AnchoredPosition: {x: 113, y: 263}
+  m_AnchoredPosition: {x: 113, y: 200}
   m_SizeDelta: {x: 200, y: 160}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1984356806
@@ -10020,10 +10020,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a187ad6f82f8e1e4e802b2d82a4f019c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  baseDamage: 40
+  baseDamage: 90
   basicAttackRange: 2.5
   basicAttackRadius: 1.5
-  specialAttackDamage: 30
+  specialAttackDamage: 50
   projectilePrefab: {fileID: 682697502}
   projectileSpeed: 20
   projectileSpawnPoint: {fileID: 0}
