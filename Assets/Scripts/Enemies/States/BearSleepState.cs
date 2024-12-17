@@ -18,8 +18,11 @@ namespace Enemies.States
             base.Enter();
             Debug.Log($"[{bearController.name}] Entering Sleep State");
             
-            // Stop the agent from moving
-            agent.isStopped = true;
+            // Stop the agent from moving if valid
+            if (IsAgentValid())
+            {
+                agent.isStopped = true;
+            }
             
             // Set sleep animation
             animator.SetBool("Sleep", true);
@@ -29,7 +32,12 @@ namespace Enemies.States
         public override void Exit()
         {
             animator.SetBool("Sleep", false);
-            agent.isStopped = false;
+            
+            // Only resume agent if it's valid
+            if (IsAgentValid())
+            {
+                agent.isStopped = false;
+            }
         }
 
         public override void Update()

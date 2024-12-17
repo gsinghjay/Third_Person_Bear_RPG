@@ -1,241 +1,316 @@
 using UnityEngine;
+using UnityEngine.AI;
 using System.Collections.Generic;
-using Enemies.Interfaces;
 using Enemies.Types;
+using Enemies.Interfaces;
 
 namespace Enemies.Core
 {
     public class BearSpawner : MonoBehaviour
     {
+        public enum ArenaType { Northwest, Northeast, Boss }
+        
+        [Header("Bear Prefabs")]
         [SerializeField] private GameObject normalBearPrefab;
         [SerializeField] private GameObject fireBearPrefab;
         [SerializeField] private GameObject iceBearPrefab;
+        
+        [Header("Arena References")]
         [SerializeField] private Terrain terrain;
-
-        // New serialized fields for arena center game objects
         [SerializeField] private GameObject fireArenaCenter;
         [SerializeField] private GameObject iceArenaCenter;
         [SerializeField] private GameObject bossArenaCenter;
-
-        // Update arenaSettings to use game objects
-        private (Vector2 position, float radius)[] arenaSettings;
+        
+        private Dictionary<ArenaType, ArenaSettings> arenaSettings;
+        public bool IsInitialized { get; private set; }
 
         private void Awake()
         {
-            // Initialize arenaSettings using the positions of the game objects
-            arenaSettings = new[]
+            ValidateReferences();
+            InitializeArenaSettings();
+            IsInitialized = true;
+        }
+
+        private void InitializeArenaSettings()
+        {
+            arenaSettings = new Dictionary<ArenaType, ArenaSettings>
             {
-                (new Vector2(fireArenaCenter.transform.position.x / terrain.terrainData.size.x, 
-                             fireArenaCenter.transform.position.z / terrain.terrainData.size.z), 35f),
-                (new Vector2(iceArenaCenter.transform.position.x / terrain.terrainData.size.x, 
-                             iceArenaCenter.transform.position.z / terrain.terrainData.size.z), 40f),
-                (new Vector2(bossArenaCenter.transform.position.x / terrain.terrainData.size.x, 
-                             bossArenaCenter.transform.position.z / terrain.terrainData.size.z), 50f)
+                { ArenaType.Northwest, new ArenaSettings 
+                    {
+                        questId = "northwest_arena",
+                        name = "Northwest Arena",
+                        position = new Vector2(
+                            fireArenaCenter.transform.position.x,
+                            fireArenaCenter.transform.position.z
+                        ),
+                        radius = 35f,
+                        normalBearCount = 2,
+                        fireBearCount = 5,
+                        iceBearCount = 0
+                    }
+                },
+                { ArenaType.Northeast, new ArenaSettings
+                    {
+                        questId = "northeast_arena",
+                        name = "Northeast Arena",
+                        position = new Vector2(
+                            iceArenaCenter.transform.position.x,
+                            iceArenaCenter.transform.position.z
+                        ),
+                        radius = 40f,
+                        normalBearCount = 2,
+                        fireBearCount = 0,
+                        iceBearCount = 5
+                    }
+                },
+                { ArenaType.Boss, new ArenaSettings
+                    {
+                        questId = "boss_arena",
+                        name = "Boss Arena",
+                        position = new Vector2(
+                            bossArenaCenter.transform.position.x,
+                            bossArenaCenter.transform.position.z
+                        ),
+                        radius = 50f,
+                        normalBearCount = 1,
+                        fireBearCount = 3,
+                        iceBearCount = 3
+                    }
+                }
             };
         }
 
-        private Vector2[] GenerateArenaSpawnPoints(Vector2 arenaCenter, float radius, int bearCount, int arenaIndex)
+        private void ValidateReferences()
+        {
+            if (!terrain) 
+            {
+                terrain = FindObjectOfType<Terrain>();
+                if (!terrain) Debug.LogError("No terrain found!");
+            }
+            
+            if (!fireArenaCenter) Debug.LogError("Fire Arena Center is missing!");
+            if (!iceArenaCenter) Debug.LogError("Ice Arena Center is missing!");
+            if (!bossArenaCenter) Debug.LogError("Boss Arena Center is missing!");
+            
+            if (!normalBearPrefab) Debug.LogError("Normal Bear Prefab is missing!");
+            if (!fireBearPrefab) Debug.LogError("Fire Bear Prefab is missing!");
+            if (!iceBearPrefab) Debug.LogError("Ice Bear Prefab is missing!");
+        }
+
+        public void SpawnArena(ArenaType arenaType)
+        {
+            if (!IsInitialized)
+            {
+                Debug.LogError("BearSpawner not initialized!");
+                return;
+            }
+
+            if (!arenaSettings.TryGetValue(arenaType, out ArenaSettings settings))
+            {
+                Debug.LogError($"Arena settings not found for {arenaType}");
+                return;
+            }
+
+            Debug.Log($"Spawning {arenaType} arena at position {settings.position}");
+            
+            Vector2[] spawnPoints = GenerateArenaSpawnPoints(settings.position, settings.radius, 
+                settings.normalBearCount + settings.fireBearCount + settings.iceBearCount);
+            
+            SpawnBears(spawnPoints, settings);
+        }
+
+        private Vector2[] GenerateArenaSpawnPoints(Vector2 center, float radius, int count)
         {
             List<Vector2> points = new List<Vector2>();
-            float spawnRadius = radius * 0.6f; // Match TerrainGenerator's 60% spawn radius
+            float spawnRadius = radius * 0.6f;
+            int maxAttempts = 30; // Prevent infinite loops
             
-            Debug.Log($"Arena {arenaIndex} - Center: {arenaCenter}, Radius: {radius}, SpawnRadius: {spawnRadius}");
-            
-            for (int i = 0; i < bearCount; i++)
+            for (int i = 0; i < count; i++)
             {
-                float angle = (360f / bearCount) * i;
-                
-                // Calculate normalized coordinates with proper scaling
-                float normalizedRadius = spawnRadius / terrain.terrainData.size.x;
-                float x = arenaCenter.x + (Mathf.Cos(angle * Mathf.Deg2Rad) * normalizedRadius);
-                float y = arenaCenter.y + (Mathf.Sin(angle * Mathf.Deg2Rad) * normalizedRadius);
-                
-                points.Add(new Vector2(x, y));
-                Debug.Log($"Arena {arenaIndex} - Spawn point {i}: Normalized({x}, {y})");
+                Vector2 validPoint = FindValidSpawnPoint(center, spawnRadius, maxAttempts);
+                points.Add(validPoint);
             }
             
             return points.ToArray();
         }
 
-        private Vector3[] AdjustSpawnPointsToTerrain(Vector2[] points)
+        private Vector2 FindValidSpawnPoint(Vector2 center, float radius, int maxAttempts)
         {
-            Vector3[] adjustedPoints = new Vector3[points.Length];
-            
-            for (int i = 0; i < points.Length; i++)
+            for (int attempt = 0; attempt < maxAttempts; attempt++)
             {
-                // Ensure points stay within terrain bounds
-                float x = Mathf.Clamp01(points[i].x);
-                float z = Mathf.Clamp01(points[i].y);
+                float angle = Random.Range(0f, 360f);
+                float distance = Random.Range(radius * 0.3f, radius);
                 
-                float worldX = x * terrain.terrainData.size.x;
-                float worldZ = z * terrain.terrainData.size.z;
-                float height = terrain.SampleHeight(new Vector3(worldX, 0, worldZ));
+                float x = center.x + (Mathf.Cos(angle * Mathf.Deg2Rad) * distance);
+                float z = center.y + (Mathf.Sin(angle * Mathf.Deg2Rad) * distance);
                 
-                adjustedPoints[i] = new Vector3(worldX, height, worldZ);
-                Debug.Log($"Arena Point {i}: World({worldX}, {height}, {worldZ})");
-            }
-            
-            return adjustedPoints;
-        }
+                Vector3 worldPoint = new Vector3(x, 1000f, z); // Start high
+                
+                // Sample terrain height
+                float terrainHeight = terrain.SampleHeight(worldPoint);
+                worldPoint.y = terrainHeight;
 
-        void Start()
-        {
-            if (terrain == null)
-            {
-                terrain = FindObjectOfType<Terrain>();
-                if (terrain == null)
+                // Check if point is on NavMesh
+                NavMeshHit hit;
+                if (NavMesh.SamplePosition(worldPoint, out hit, 5f, NavMesh.AllAreas))
                 {
-                    Debug.LogError("No terrain found in scene!");
-                    return;
+                    return new Vector2(hit.position.x, hit.position.z);
                 }
             }
-
-            // Add these debug logs
-            foreach (var (pos, rad) in arenaSettings)
-            {
-                Debug.Log($"Arena Settings - Position: {pos}, Radius: {rad}");
-            }
-
-            Debug.Log($"Terrain size: {terrain.terrainData.size}");
             
-            // Match TerrainGenerator bear counts exactly
-            SpawnBearsInArena(0, 2, 2, 0); // Fire Arena: 2 normal, 2 fire
-            SpawnBearsInArena(1, 1, 0, 3); // Ice Arena: 1 normal, 3 ice
-            SpawnBearsInArena(2, 2, 2, 2); // Boss Arena: 2 of each
+            // Fallback to center point if no valid position found
+            Debug.LogWarning("Could not find valid spawn point, using center position");
+            return center;
         }
 
-        private void SpawnBearsInArena(int arenaIndex, int normalCount, int fireCount, int iceCount)
+        private void SpawnBears(Vector2[] spawnPoints, ArenaSettings arena)
         {
-            if (arenaIndex >= arenaSettings.Length)
-            {
-                Debug.LogError($"Invalid arena index: {arenaIndex}");
-                return;
-            }
-
-            var (arenaCenter, arenaRadius) = arenaSettings[arenaIndex];
-            Debug.Log($"SpawnBearsInArena {arenaIndex} - Center: {arenaCenter}, Radius: {arenaRadius}");
-            
-            ArenaSettings arena = new ArenaSettings
-            {
-                position = arenaCenter,
-                normalBearCount = normalCount,
-                fireBearCount = fireCount,
-                iceBearCount = iceCount
-            };
-
-            int totalBears = normalCount + fireCount + iceCount;
-            Debug.Log($"SpawnBearsInArena {arenaIndex} - Total Bears: {totalBears}");
-            
-            Vector2[] spawnPoints = GenerateArenaSpawnPoints(arenaCenter, arenaRadius, totalBears, arenaIndex);
-            Debug.Log($"SpawnBearsInArena {arenaIndex} - Generated {spawnPoints.Length} spawn points");
-            
-            SpawnBears(spawnPoints, arena);
-        }
-
-        // Updated visualization
-        private void OnDrawGizmos()
-        {
-            if (terrain == null) return;
-
-            for (int i = 0; i < arenaSettings.Length; i++)
-            {
-                var (arenaCenter, radius) = arenaSettings[i];
-                float spawnRadius = radius * 0.6f;
-                
-                // Draw arena center
-                Gizmos.color = Color.blue;
-                Vector3 centerWorld = new Vector3(
-                    arenaCenter.x * terrain.terrainData.size.x,
-                    terrain.SampleHeight(new Vector3(arenaCenter.x * terrain.terrainData.size.x, 0, arenaCenter.y * terrain.terrainData.size.z)),
-                    arenaCenter.y * terrain.terrainData.size.z
-                );
-                Gizmos.DrawSphere(centerWorld, 3f);
-                
-                // Draw arena boundary
-                Gizmos.color = Color.yellow;
-                Gizmos.DrawWireSphere(centerWorld, radius);
-                
-                // Draw spawn radius
-                Gizmos.color = Color.green;
-                Gizmos.DrawWireSphere(centerWorld, spawnRadius);
-
-                // Draw spawn points
-                Gizmos.color = Color.red;
-                int totalBears = (i == 0) ? 4 : (i == 1) ? 4 : 6;
-                Vector2[] spawnPoints = GenerateArenaSpawnPoints(arenaCenter, radius, totalBears, i);
-                Vector3[] worldPoints = AdjustSpawnPointsToTerrain(spawnPoints);
-                
-                foreach (Vector3 point in worldPoints)
-                {
-                    Gizmos.DrawSphere(point, 2f);
-                    Gizmos.DrawLine(centerWorld, point);
-                }
-            }
-        }
-
-        public void SpawnBears(Vector2[] spawnPoints, ArenaSettings arena)
-        {
-            // Validate input
-            int totalBearsNeeded = arena.normalBearCount + arena.fireBearCount + arena.iceBearCount;
-            if (spawnPoints.Length < totalBearsNeeded)
-            {
-                Debug.LogError($"Not enough spawn points ({spawnPoints.Length}) for requested bears ({totalBearsNeeded})");
-                return;
-            }
-
             int spawnIndex = 0;
-            Vector3[] adjustedSpawnPoints = AdjustSpawnPointsToTerrain(spawnPoints);
 
             // Spawn normal bears
-            for (int i = 0; i < arena.normalBearCount && spawnIndex < adjustedSpawnPoints.Length; i++)
+            for (int i = 0; i < arena.normalBearCount; i++)
             {
-                SpawnBear(normalBearPrefab, adjustedSpawnPoints[spawnIndex++]);
+                SpawnBear(normalBearPrefab, spawnPoints[spawnIndex++], arena.questId);
             }
 
             // Spawn fire bears
-            for (int i = 0; i < arena.fireBearCount && spawnIndex < adjustedSpawnPoints.Length; i++)
+            for (int i = 0; i < arena.fireBearCount; i++)
             {
-                SpawnBear(fireBearPrefab, adjustedSpawnPoints[spawnIndex++]);
+                SpawnBear(fireBearPrefab, spawnPoints[spawnIndex++], arena.questId);
             }
 
             // Spawn ice bears
-            for (int i = 0; i < arena.iceBearCount && spawnIndex < adjustedSpawnPoints.Length; i++)
+            for (int i = 0; i < arena.iceBearCount; i++)
             {
-                SpawnBear(iceBearPrefab, adjustedSpawnPoints[spawnIndex++]);
+                SpawnBear(iceBearPrefab, spawnPoints[spawnIndex++], arena.questId);
             }
         }
 
-        private void SpawnBear(GameObject bearPrefab, Vector3 spawnPoint)
+        private void SpawnBear(GameObject prefab, Vector2 spawnPoint, string questId)
         {
-            if (bearPrefab == null)
+            if (prefab == null)
             {
                 Debug.LogError("Bear prefab is null!");
                 return;
             }
 
-            Debug.Log($"Spawning bear at position: {spawnPoint}");
-            GameObject bearObject = Instantiate(bearPrefab, spawnPoint, Quaternion.identity);
-            if (bearObject == null)
-            {
-                Debug.LogError("Failed to instantiate bear prefab!");
-                return;
-            }
+            // Convert 2D point to 3D and find valid NavMesh position
+            Vector3 spawnPosition = new Vector3(spawnPoint.x, 1000f, spawnPoint.y);
+            float terrainHeight = terrain.SampleHeight(spawnPosition);
+            spawnPosition.y = terrainHeight;
 
-            // Add a temporary visual marker
-            GameObject marker = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            marker.transform.position = spawnPoint;
-            marker.transform.localScale = Vector3.one * 2; // Adjust size as needed
-            Destroy(marker, 5f); // Remove after 5 seconds
-
-            IBear bear = bearObject.GetComponent<IBear>();
-            
-            if (bear == null)
+            NavMeshHit hit;
+            if (NavMesh.SamplePosition(spawnPosition, out hit, 5f, NavMesh.AllAreas))
             {
-                Debug.LogError($"IBear component not found on prefab: {bearPrefab.name}");
-                return;
+                GameObject bearObject = Instantiate(prefab, hit.position, Quaternion.identity);
+                
+                if (bearObject.TryGetComponent<IBear>(out var bear))
+                {
+                    bear.QuestId = questId;
+                    bear.OnDeath += HandleBearDeath;
+                    bear.Initialize(hit.position);
+                }
+                else
+                {
+                    Debug.LogError($"Failed to get IBear component from spawned bear: {prefab.name}");
+                }
             }
+            else
+            {
+                Debug.LogError($"Could not find valid NavMesh position near {spawnPosition}");
+            }
+        }
+
+        private void HandleBearDeath(IBear bear)
+        {
+            // Unsubscribe from the event
+            bear.OnDeath -= HandleBearDeath;
             
-            bear.Initialize(spawnPoint);
+            // Only update quest if not already handled
+            if (!((BearController)bear).QuestUpdateHandled)
+            {
+                QuestManager.Instance.OnBearKilled(bear.QuestId);
+                ((BearController)bear).QuestUpdateHandled = true;
+            }
+        }
+
+        private void OnDrawGizmos()
+        {
+            if (!Application.isPlaying || terrain == null) return;
+
+            foreach (var kvp in arenaSettings)
+            {
+                var settings = kvp.Value;
+                Vector3 centerWorld = new Vector3(
+                    settings.position.x,
+                    terrain.SampleHeight(new Vector3(settings.position.x, 0, settings.position.y)),
+                    settings.position.y
+                );
+
+                // Draw arena center
+                Gizmos.color = Color.blue;
+                Gizmos.DrawSphere(centerWorld, 3f);
+                
+                // Draw arena boundary
+                Gizmos.color = Color.yellow;
+                Gizmos.DrawWireSphere(centerWorld, settings.radius);
+                
+                // Draw spawn radius
+                Gizmos.color = Color.green;
+                Gizmos.DrawWireSphere(centerWorld, settings.radius * 0.6f);
+
+                // Draw NavMesh validation
+                NavMeshHit hit;
+                if (NavMesh.SamplePosition(centerWorld, out hit, 5f, NavMesh.AllAreas))
+                {
+                    Gizmos.color = Color.green;
+                    Gizmos.DrawLine(centerWorld, hit.position);
+                }
+                else
+                {
+                    Gizmos.color = Color.red;
+                    Gizmos.DrawWireCube(centerWorld, Vector3.one * 2f);
+                }
+            }
+        }
+
+        public ArenaSettings GetArenaSettings(ArenaType arenaType)
+        {
+            if (arenaSettings.TryGetValue(arenaType, out ArenaSettings settings))
+            {
+                return settings;
+            }
+            return null;
+        }
+
+        public bool ValidateNorthwestArena()
+        {
+            return fireArenaCenter != null && normalBearPrefab != null;
+        }
+
+        public bool ValidateNortheastArena()
+        {
+            return iceArenaCenter != null && normalBearPrefab != null && fireBearPrefab != null;
+        }
+
+        public bool ValidateBossArena()
+        {
+            return bossArenaCenter != null && 
+                   normalBearPrefab != null && 
+                   fireBearPrefab != null && 
+                   iceBearPrefab != null;
+        }
+
+        // Make ArenaSettings public so it can be accessed
+        public class ArenaSettings
+        {
+            public string questId;
+            public string name;
+            public Vector2 position;
+            public float radius;
+            public int normalBearCount;
+            public int fireBearCount;
+            public int iceBearCount;
         }
     }
-} 
+}
