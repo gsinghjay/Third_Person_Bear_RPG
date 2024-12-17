@@ -119,6 +119,28 @@ public class PetFollower : MonoBehaviour
 
     private void UpdatePetMovement(float distanceToPlayer)
     {
+        // If we're leading to a target but no bears are in detection range, reset to normal following
+        if (isLeadingToTarget)
+        {
+            Collider[] bearColliders = Physics.OverlapSphere(transform.position, bearDetectionRange, bearLayerMask);
+            if (bearColliders.Length == 0)
+            {
+                // Reset alert state
+                isLeadingToTarget = false;
+                lastAlertPosition = Vector3.zero;
+                isAlerted = false;
+                
+                if (alertIndicator != null)
+                {
+                    alertIndicator.gameObject.SetActive(false);
+                }
+                
+                // Update animation
+                UpdateAnimation();
+            }
+        }
+
+        // Normal movement logic
         if (isLeadingToTarget && lastAlertPosition != Vector3.zero)
         {
             // Lead player to the bear
