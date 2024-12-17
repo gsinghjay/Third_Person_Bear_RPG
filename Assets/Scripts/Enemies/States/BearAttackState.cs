@@ -5,7 +5,7 @@ namespace Enemies.States
 {
     public class BearAttackState : BearStateBase
     {
-        private readonly float attackDuration = 1.5f;
+        private readonly float baseAttackDuration = 1.5f;
         private float attackTimer;
         private bool hasDealtDamage;
         private readonly int attackVariations = 5;
@@ -17,7 +17,7 @@ namespace Enemies.States
             base.Enter();
             animator.SetBool("Combat Idle", true);
             TriggerAttackAnimation();
-            attackTimer = attackDuration;
+            attackTimer = baseAttackDuration / bearController.AttackSpeed;
             hasDealtDamage = false;
         }
 
@@ -30,10 +30,12 @@ namespace Enemies.States
 
         public override void HandleCombat()
         {
-            if (!hasDealtDamage && attackTimer <= attackDuration * 0.5f)
+            if (!hasDealtDamage && attackTimer <= (baseAttackDuration / bearController.AttackSpeed) * 0.5f)
             {
                 bearController.DealDamage();
                 hasDealtDamage = true;
+                
+                Debug.Log($"{bearController.Type} Bear attack connects!");
             }
         }
 
@@ -71,6 +73,20 @@ namespace Enemies.States
         {
             int attackNumber = Random.Range(1, attackVariations + 1);
             animator.SetTrigger($"Attack{attackNumber}");
+            
+            if (animator != null)
+            {
+                animator.speed = bearController.AttackSpeed;
+            }
+        }
+
+        public override void Exit()
+        {
+            base.Exit();
+            if (animator != null)
+            {
+                animator.speed = 1f;
+            }
         }
     }
 } 

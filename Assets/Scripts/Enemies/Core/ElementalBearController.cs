@@ -9,6 +9,8 @@ namespace Enemies.Core
         [SerializeField] protected float elementalDamage = 20f;
         [SerializeField] protected ParticleSystem elementalEffect;
         
+        public float ElementalDamage => elementalDamage;
+        
         protected override float CalculateDamage(float damage, DamageType damageType)
         {
             // Apply elemental resistance/weakness logic
