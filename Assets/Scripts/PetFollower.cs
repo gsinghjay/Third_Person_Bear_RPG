@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.AI;
 using Animancer;
+using Enemies.Interfaces;
+using System.Collections;
 
 public class PetFollower : MonoBehaviour
 {
@@ -21,8 +23,18 @@ public class PetFollower : MonoBehaviour
     [SerializeField] private ClipTransition _alertAnimation; // For when detecting bears
     [SerializeField] private float _transitionDuration = 0.25f;
 
+    [Header("Detection Settings")]
+    [SerializeField] private float bearDetectionRange = 15f;
+    [SerializeField] private float bearCheckInterval = 0.5f;
+    [SerializeField] private LayerMask bearLayerMask; // Set this in Inspector
+    [SerializeField] private Transform alertIndicator; // Optional UI element to show direction
+
     private float nextPathUpdate;
     private bool isAlerted;
+    private IBear detectedBear;
+    private float nextBearCheck;
+    private bool isLeadingToTarget;
+    private Vector3 lastAlertPosition;
 
     private void Start()
     {
@@ -81,6 +93,13 @@ public class PetFollower : MonoBehaviour
 
         float distanceToPlayer = Vector3.Distance(transform.position, playerTransform.position);
 
+        // Check for bears periodically
+        if (Time.time >= nextBearCheck)
+        {
+            CheckForBears();
+            nextBearCheck = Time.time + bearCheckInterval;
+        }
+
         // Update path periodically
         if (Time.time >= nextPathUpdate)
         {
@@ -100,7 +119,25 @@ public class PetFollower : MonoBehaviour
 
     private void UpdatePetMovement(float distanceToPlayer)
     {
-        if (distanceToPlayer > minDistanceToPlayer)
+        if (isLeadingToTarget && lastAlertPosition != Vector3.zero)
+        {
+            // Lead player to the bear
+            float distanceToTarget = Vector3.Distance(transform.position, lastAlertPosition);
+            
+            if (distanceToTarget > minDistanceToPlayer)
+            {
+                agent.SetDestination(lastAlertPosition);
+            }
+            else
+            {
+                // Wait for player to catch up
+                if (distanceToPlayer > minDistanceToPlayer * 2)
+                {
+                    agent.SetDestination(playerTransform.position);
+                }
+            }
+        }
+        else if (distanceToPlayer > minDistanceToPlayer)
         {
             agent.SetDestination(playerTransform.position);
         }
@@ -140,8 +177,26 @@ public class PetFollower : MonoBehaviour
         // Don't replay the same animation
         if (_animancer.IsPlaying(animation)) return;
 
-        // Stop current animation and play new one
+        // Play the new animation
         _animancer.Play(animation, _transitionDuration);
+        
+        // If this is the alert animation, set up a coroutine to handle the end
+        if (animation == _alertAnimation)
+        {
+            StartCoroutine(HandleAlertAnimationEnd(animation.Clip.length));
+        }
+    }
+
+    private IEnumerator HandleAlertAnimationEnd(float duration)
+    {
+        yield return new WaitForSeconds(duration);
+        
+        isAlerted = false;
+        if (alertIndicator != null)
+        {
+            alertIndicator.gameObject.SetActive(false);
+        }
+        UpdateAnimation();
     }
 
     private void TeleportNearPlayer()
@@ -166,5 +221,54 @@ public class PetFollower : MonoBehaviour
     {
         isAlerted = true;
         PlayAnimation(_alertAnimation);
+    }
+
+    private void CheckForBears()
+    {
+        // If already alerted, don't check for new bears
+        if (isAlerted) return;
+
+        Collider[] bearColliders = Physics.OverlapSphere(transform.position, bearDetectionRange, bearLayerMask);
+        
+        foreach (Collider bearCollider in bearColliders)
+        {
+            if (bearCollider.TryGetComponent<IBear>(out IBear bear))
+            {
+                // Store the detected bear's position
+                lastAlertPosition = bearCollider.transform.position;
+                detectedBear = bear;
+                
+                // Trigger alert animation and behavior
+                TriggerBearAlert();
+                return;
+            }
+        }
+    }
+
+    private void TriggerBearAlert()
+    {
+        isAlerted = true;
+        isLeadingToTarget = true;
+        
+        // Face the direction of the bear
+        Vector3 directionToBear = (lastAlertPosition - transform.position).normalized;
+        transform.rotation = Quaternion.LookRotation(directionToBear);
+        
+        // Update the alert indicator direction if it exists
+        if (alertIndicator != null)
+        {
+            alertIndicator.gameObject.SetActive(true);
+            alertIndicator.forward = directionToBear;
+        }
+        
+        PlayAnimation(_alertAnimation);
+    }
+
+    // Add OnDrawGizmosSelected for debugging
+    private void OnDrawGizmosSelected()
+    {
+        // Draw bear detection range
+        Gizmos.color = Color.yellow;
+        Gizmos.DrawWireSphere(transform.position, bearDetectionRange);
     }
 } 

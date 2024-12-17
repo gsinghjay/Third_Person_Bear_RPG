@@ -6563,6 +6563,12 @@ MonoBehaviour:
     _Clip: {fileID: 7400000, guid: d005e95bf0134a26ad4ed5c5b36201ce, type: 3}
     _NormalizedStartTime: NaN
   _transitionDuration: 0.25
+  bearDetectionRange: 1000
+  bearCheckInterval: 0.5
+  bearLayerMask:
+    serializedVersion: 2
+    m_Bits: 1024
+  alertIndicator: {fileID: 0}
   references:
     version: 2
     RefIds: []
@@ -6581,7 +6587,7 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: 0
   m_Radius: 0.5
-  m_Speed: 20
+  m_Speed: 10
   m_Acceleration: 28
   avoidancePriority: 50
   m_AngularSpeed: 120
