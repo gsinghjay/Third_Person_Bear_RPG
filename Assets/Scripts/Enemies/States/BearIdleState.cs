@@ -18,7 +18,11 @@ namespace Enemies.States
             animator.SetBool("Idle", true);
             detectionCheckTimer = 0f;
             sleepTimer = 0f;
-            agent.isStopped = true;
+            
+            if (agent != null && agent.isActiveAndEnabled && agent.isOnNavMesh)
+            {
+                agent.isStopped = true;
+            }
         }
 
         public override void Update()

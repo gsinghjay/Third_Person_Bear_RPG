@@ -11,5 +11,10 @@ namespace Enemies.Core
 
         protected override bool IsResistantTo(DamageType damageType)
             => damageType == DamageType.Fire;
+
+        protected override DamageType GetDamageType()
+        {
+            return DamageType.Fire;
+        }
     }
 } 

@@ -11,5 +11,10 @@ namespace Enemies.Core
 
         protected override bool IsResistantTo(DamageType damageType)
             => damageType == DamageType.Ice;
+
+        protected override DamageType GetDamageType()
+        {
+            return DamageType.Ice;
+        }
     }
 } 

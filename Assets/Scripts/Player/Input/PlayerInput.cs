@@ -22,6 +22,14 @@ namespace Player.Input
         public bool IsJumping => UnityEngine.Input.GetButtonDown("Jump");
         public bool IsSprinting => UnityEngine.Input.GetKey(KeyCode.LeftShift);
         public bool IsAttacking => UnityEngine.Input.GetMouseButtonDown(0);
-        public bool IsDefending => UnityEngine.Input.GetMouseButton(1);
+        public bool IsSpecialAttacking => UnityEngine.Input.GetMouseButtonDown(1);
+
+        private void Update()
+        {
+            if (IsAttacking)
+            {
+                Debug.Log("PlayerInput: Attack input detected");
+            }
+        }
     }
 } 

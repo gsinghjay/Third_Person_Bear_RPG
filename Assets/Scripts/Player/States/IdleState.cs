@@ -5,12 +5,21 @@ namespace Player.States
 {
     public class IdleState : PlayerStateBase
     {
+        private bool wasInAir = false;
+
         public IdleState(PlayerController controller) : base(controller) { }
 
         public override void Enter()
         {
-            animator.SetBool("IsCombat", false);
-            animator.SetBool("IsSprinting", false);
+            base.Enter();
+            wasInAir = !characterController.isGrounded;
+            Debug.Log("IdleState: Entered");
+        }
+
+        public override void Update()
+        {
+            base.Update();
+            wasInAir = !characterController.isGrounded;
         }
 
         public override void HandleMovement(Vector2 input)
@@ -31,24 +40,43 @@ namespace Player.States
             }
 
             ApplyGravity();
-            UpdateAnimations(input.magnitude >= 0.1f);
+            UpdateAnimations(input.magnitude >= 0.1f, input);
         }
 
         public override void HandleCombat()
         {
-            if (playerInput.IsAttacking || playerInput.IsDefending)
+            // Don't allow attacks while jumping
+            if (animationController.IsJumping())
             {
-                playerController.ChangeState(new CombatState(playerController));
+                return;
+            }
+
+            if (playerInput.IsAttacking || playerInput.IsSpecialAttacking)
+            {
+                var combatState = new CombatState(playerController);
+                playerController.ChangeState(combatState);
+                
+                // Forward the combat input to the new state
+                playerController.CurrentState.HandleCombat();
             }
         }
 
         public override void HandleJump()
         {
-            if (characterController.isGrounded && playerInput.IsJumping)
+            base.HandleJump();
+
+            if (!characterController.isGrounded)
             {
-                playerController.VerticalVelocity = playerController.JumpForce;
-                animator.SetTrigger("Jump");
+                Vector3 moveDirection = Vector3.zero;
+                moveDirection.y = playerController.VerticalVelocity;
+                playerController.Move(moveDirection);
             }
+        }
+
+        public override void Exit()
+        {
+            base.Exit();
+            Debug.Log("IdleState: Exited");
         }
     }
 } 

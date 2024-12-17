@@ -5,16 +5,21 @@ namespace Player.States
 {
     public class SprintState : PlayerStateBase
     {
+        private bool wasInAir = false;
+
         public SprintState(PlayerController controller) : base(controller) { }
 
         public override void Enter()
         {
-            animator.SetBool("IsSprinting", true);
+            base.Enter();
+            wasInAir = !characterController.isGrounded;
+            Debug.Log("SprintState: Entered");
         }
 
-        public override void Exit()
+        public override void Update()
         {
-            animator.SetBool("IsSprinting", false);
+            base.Update();
+            wasInAir = !characterController.isGrounded;
         }
 
         public override void HandleMovement(Vector2 input)
@@ -22,10 +27,9 @@ namespace Player.States
             if (input.magnitude >= 0.1f && playerInput.IsSprinting)
             {
                 Vector3 moveDirection = playerController.CalculateMoveDirection(input);
-                float currentSpeed = playerController.SprintSpeed;
-
+                
                 playerController.RotateTowardsMoveDirection(moveDirection);
-                playerController.Move(moveDirection * currentSpeed);
+                playerController.Move(moveDirection, playerController.SprintSpeed);
             }
             else
             {
@@ -34,24 +38,31 @@ namespace Player.States
             }
 
             ApplyGravity();
-            UpdateAnimations(true);
+            UpdateAnimations(true, input);
         }
 
         public override void HandleCombat()
         {
-            if (playerInput.IsAttacking || playerInput.IsDefending)
+            // Don't allow attacks while jumping
+            if (animationController.IsJumping())
             {
-                playerController.ChangeState(new CombatState(playerController));
+                return;
+            }
+
+            if (playerInput.IsAttacking || playerInput.IsSpecialAttacking)
+            {
+                var combatState = new CombatState(playerController);
+                playerController.ChangeState(combatState);
+                
+                // Forward the combat input to the new state
+                playerController.CurrentState.HandleCombat();
             }
         }
 
-        public override void HandleJump()
+        public override void Exit()
         {
-            if (characterController.isGrounded && playerInput.IsJumping)
-            {
-                playerController.VerticalVelocity = playerController.JumpForce;
-                animator.SetTrigger("Jump");
-            }
+            base.Exit();
+            Debug.Log("SprintState: Exited");
         }
     }
 } 
